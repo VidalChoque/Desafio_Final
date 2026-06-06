@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métodos Numéricos — Crisis Bolivia</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">Desafío Final · Métodos Numéricos</div>
+  <h1>Simulación numérica de<br><em>crisis, precios y conflicto</em><br>en Bolivia</h1>
+  <p>Aplicación de métodos numéricos computacionales para modelar, analizar y visualizar escenarios reales: abastecimiento de carburantes, fluctuación de precios, pérdida del poder adquisitivo y dinámica social.</p>
+  <div class="btn-group">
+    <a class="btn btn-primary" href="escenarios/escenario-a.html">Explorar Escenarios →</a>
+  </div>
+</section>
+
+<div class="scenarios-grid">
+
+  <a href="escenarios/escenario-a.html" class="scenario-card" style="--card-color:#00e5ff">
+    <div class="card-letter">A</div>
+    <div class="card-title">Optimización del Abastecimiento y Red de Transporte</div>
+    <div class="card-desc">Distribución de carburantes y alimentos desde plantas hacia zonas de la ciudad con restricciones de rutas y bloqueos.</div>
+    <div class="card-methods">
+      <span class="method-badge">Jacobi</span>
+      <span class="method-badge">Gauss-Seidel</span>
+      <span class="method-badge">SOR</span>
+      <span class="method-badge">LU</span>
+      <span class="method-badge">Grad. Conjugado</span>
+    </div>
+  </a>
+
+  <a href="escenarios/escenario-b.html" class="scenario-card" style="--card-color:#ff6b35">
+    <div class="card-letter">B</div>
+    <div class="card-title">Vaciado Crítico de Reservas de Carburantes</div>
+    <div class="card-desc">Simulación de cómo disminuyen las reservas cuando la demanda aumenta y el reabastecimiento es limitado.</div>
+    <div class="card-methods">
+      <span class="method-badge">Euler</span>
+      <span class="method-badge">Heun</span>
+      <span class="method-badge">RK4</span>
+    </div>
+  </a>
+
+  <a href="escenarios/escenario-c.html" class="scenario-card" style="--card-color:#00ff9d">
+    <div class="card-letter">C</div>
+    <div class="card-title">Curva Continua de Precios de Alimentos</div>
+    <div class="card-desc">Reconstrucción de curvas de precios a partir de datos dispersos por día o semana durante la crisis.</div>
+    <div class="card-methods">
+      <span class="method-badge">Lagrange</span>
+      <span class="method-badge">Newton</span>
+      <span class="method-badge">Splines Cúbicos</span>
+    </div>
+  </a>
+
+  <a href="escenarios/escenario-d.html" class="scenario-card" style="--card-color:#ffd60a">
+    <div class="card-letter">D</div>
+    <div class="card-title">Costo Acumulado y Pérdida del Poder Adquisitivo</div>
+    <div class="card-desc">Cálculo del gasto mensual familiar cuando los precios de la canasta básica aumentan progresivamente.</div>
+    <div class="card-methods">
+      <span class="method-badge">Trapecio</span>
+      <span class="method-badge">Simpson 1/3</span>
+      <span class="method-badge">Simpson 3/8</span>
+    </div>
+  </a>
+
+  <a href="escenarios/escenario-e.html" class="scenario-card" style="--card-color:#7c3aed">
+    <div class="card-letter">E</div>
+    <div class="card-title">Umbrales Críticos de Abastecimiento</div>
+    <div class="card-desc">Puntos de equilibrio donde el costo supera el ingreso familiar, tasa crítica de reposición y umbral social.</div>
+    <div class="card-methods">
+      <span class="method-badge">Bisección</span>
+      <span class="method-badge">Newton-Raphson</span>
+      <span class="method-badge">Secante</span>
+    </div>
+  </a>
+
+  <a href="escenarios/escenario-f.html" class="scenario-card" style="--card-color:#ff4757">
+    <div class="card-letter">F</div>
+    <div class="card-title">Rumores y Pánico en la Red de Distribución</div>
+    <div class="card-desc">Modelado de cómo los rumores alteran la demanda, provocan compras impulsivas y afectan la distribución.</div>
+    <div class="card-methods">
+      <span class="method-badge">Sistemas Lineales</span>
+      <span class="method-badge">Número de Condición</span>
+      <span class="method-badge">Perturbación</span>
+    </div>
+  </a>
+
+  <a href="escenarios/escenario-g.html" class="scenario-card" style="--card-color:#f97316">
+    <div class="card-letter">G</div>
+    <div class="card-title">Modelo de Difusión de Opinión y Descontento Social</div>
+    <div class="card-desc">Ecuaciones diferenciales que modelan cómo ciudadanos neutrales devienen manifestantes y el rol de los mediadores.</div>
+    <div class="card-methods">
+      <span class="method-badge">Heun</span>
+      <span class="method-badge">RK4</span>
+      <span class="method-badge">Sistema NMD</span>
+    </div>
+  </a>
+
+  <a href="escenarios/conclusiones.html" class="scenario-card" style="--card-color:#ffffff">
+    <div class="card-letter">+</div>
+    <div class="card-title">Conclusiones Generales del Modelado</div>
+    <div class="card-desc">SÃ­ntesis de aprendizajes, mÃ©todos mÃ¡s Ãºtiles, limitaciones del modelo y mejoras futuras para el proyecto.</div>
+    <div class="card-methods">
+      <span class="method-badge">Aprendizajes</span>
+      <span class="method-badge">Limitaciones</span>
+      <span class="method-badge">Mejoras</span>
+    </div>
+  </a>
+
+</div>
+
+<footer>
+  <p>Desafío Final de <strong>Métodos Numéricos</strong> · Simulación de crisis en Bolivia · 2025</p>
+  <p style="margin-top:8px;font-size:11px">Aplicación académica — análisis matemático sin posicionamiento político</p>
+</footer>
+
+<script src="js/shared.js"></script>
+<script>buildNav('index');</script>
+</body>
+</html>

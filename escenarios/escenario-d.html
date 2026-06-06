@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario D — Gasto Familiar · Métodos Numéricos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">⬡ Escenario D</div>
+    <h1>Costo Acumulado y Pérdida<br>del Poder Adquisitivo Familiar</h1>
+    <p>Cálculo del gasto mensual de una familia boliviana cuando los precios de alimentos básicos aumentan progresivamente. Se comparan los métodos de integración numérica: Trapecio, Simpson 1/3 y Simpson 3/8.</p>
+  </div>
+
+  <!-- CONTEXT -->
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situación Bolivia:</strong> Una familia promedio gasta entre Bs 800–1500/mes en canasta básica. Con el alza de precios por escasez y bloqueos, ese presupuesto ya no alcanza. La integración numérica calcula el área bajo la curva de precio, que equivale al gasto acumulado.
+      </div>
+      <div class="formula">
+        Gasto total = ∫₀ᵀ p(t) · q(t) dt<br><br>
+        p(t): precio del producto en día t<br>
+        q(t): cantidad diaria consumida<br>
+        T: período (mes = 30 días)
+      </div>
+    </div>
+  </div>
+
+  <!-- PARAMS -->
+  <div class="section">
+    <div class="section-header"><h2>Configuración de la Canasta Familiar</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Ingreso mensual familiar (Bs)</label>
+          <input type="number" id="income" value="2500" step="100">
+        </div>
+        <div class="form-group">
+          <label>Días del período</label>
+          <input type="number" id="days" value="30" step="1" min="7">
+        </div>
+        <div class="form-group">
+          <label>Subdivisiones (n, par para Simpson)</label>
+          <input type="number" id="nSubs" value="30" step="2" min="4">
+        </div>
+        <div class="form-group">
+          <label>Modelo de crecimiento de precios</label>
+          <select id="priceModel">
+            <option value="lineal">Lineal</option>
+            <option value="exponencial">Exponencial</option>
+            <option value="cuadratico">Cuadrático</option>
+            <option value="estable">Estable (sin cambio)</option>
+          </select>
+        </div>
+      </div>
+
+      <p style="color:var(--accent);font-size:12px;margin-bottom:12px;margin-top:4px">Productos de la canasta — precio inicial (Bs), tasa de crecimiento diaria (%), cantidad/día</p>
+      <div id="productRows"></div>
+
+      <div class="btn-group" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="calculate()">▶ Calcular Gasto</button>
+        <button class="btn btn-secondary" onclick="loadCrisis()">📈 Escenario Crisis</button>
+        <button class="btn btn-secondary" onclick="loadNormal()">📊 Escenario Normal</button>
+        <button class="btn btn-secondary" onclick="addProduct()">+ Producto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results"></div>
+
+  <!-- QUESTIONS -->
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>1. Cuanto gasta la familia en el periodo?</h4>
+          <p class="sub">La integral de p(t)q(t) calcula el gasto acumulado. El area bajo la curva representa el dinero total necesario para sostener la canasta durante los dias analizados.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>2. El ingreso mensual alcanza?</h4>
+          <p class="sub">El resultado se compara con el ingreso familiar. Si el gasto supera el ingreso, aparece deficit y perdida de capacidad de compra.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>3. Cuanta capacidad adquisitiva se pierde?</h4>
+          <p class="sub">La perdida se interpreta como porcentaje del ingreso consumido por la canasta. Mientras mayor sea ese porcentaje, menor margen queda para transporte, salud y otros gastos.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>4. Que regla de integracion conviene?</h4>
+          <p class="sub">Trapecio es simple y robusto; Simpson 1/3 y 3/8 son mas precisos para curvas suaves. Para crecimiento progresivo de precios, Simpson 1/3 suele dar la mejor relacion precision-costo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY -->
+  <div class="section">
+    <div class="section-header"><h2>Métodos de Integración Numérica</h2><span class="badge">TEORÍA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="td-trap">Trapecio</button>
+        <button class="tab-btn" data-tab="td-s13">Simpson 1/3</button>
+        <button class="tab-btn" data-tab="td-s38">Simpson 3/8</button>
+        <button class="tab-btn" data-tab="td-prec">Precisión</button>
+      </div>
+      <div id="td-trap" class="tab-panel active">
+        <div class="formula">∫ ≈ h/2 · [f(x₀) + 2f(x₁) + 2f(x₂) + … + f(xₙ)]</div>
+        <p>La regla del trapecio aproxima el área como suma de trapecios. Error O(h²). Para una curva de precios suavemente creciente, subestima ligeramente el área real. Es la más simple y robusta.</p>
+      </div>
+      <div id="td-s13" class="tab-panel">
+        <div class="formula">∫ ≈ h/3 · [f(x₀) + 4f(x₁) + 2f(x₂) + 4f(x₃) + … + f(xₙ)]</div>
+        <p>Simpson 1/3 usa parábolas en grupos de 3 puntos (n par). Error O(h⁴) — mucho más preciso que el trapecio para el mismo n. Ideal para curvas de gasto suaves como crecimiento de precios.</p>
+      </div>
+      <div id="td-s38" class="tab-panel">
+        <div class="formula">∫ ≈ 3h/8 · [f(x₀) + 3f(x₁) + 3f(x₂) + 2f(x₃) + … + f(xₙ)]</div>
+        <p>Simpson 3/8 usa grupos de 4 puntos (n múltiplo de 3). Error O(h⁴), igual que Simpson 1/3. Útil cuando n no es par pero sí múltiplo de 3. Se puede combinar con Simpson 1/3.</p>
+      </div>
+      <div id="td-prec" class="tab-panel">
+        <p style="color:var(--text-dim);font-size:13px">Precisión comparativa para una curva de precios suave:</p>
+        <div class="comparison-grid">
+          <div class="comparison-card"><h4>Trapecio</h4><div class="val" style="color:var(--accent)">O(h²)</div><div class="sub">Error por paso</div></div>
+          <div class="comparison-card"><h4>Simpson 1/3</h4><div class="val" style="color:var(--green)">O(h⁴)</div><div class="sub">Error por paso</div></div>
+          <div class="comparison-card"><h4>Simpson 3/8</h4><div class="val" style="color:var(--yellow)">O(h⁴)</div><div class="sub">Error por paso</div></div>
+        </div>
+        <p style="color:var(--text-dim);font-size:13px;margin-top:12px">Para calcular pérdida del poder adquisitivo familiar, Simpson 1/3 ofrece la mejor relación precisión/costo computacional.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Desafío Final de <strong>Métodos Numéricos</strong> · Escenario D · Integración Numérica</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('d');
+initTabs();
+
+let products = [
+  { name:'Papa', p0:8, rate:0.5, qty:0.3 },
+  { name:'Arroz', p0:6, rate:0.3, qty:0.2 },
+  { name:'Aceite', p0:18, rate:0.6, qty:0.05 },
+  { name:'Pollo', p0:22, rate:0.4, qty:0.15 },
+];
+
+function renderProducts() {
+  const div = document.getElementById('productRows');
+  div.innerHTML = products.map((p,i) => `
+    <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:end">
+      <div class="form-group"><label>Producto ${i+1}</label><input type="text" value="${p.name}" onchange="products[${i}].name=this.value"></div>
+      <div class="form-group"><label>P₀ (Bs)</label><input type="number" value="${p.p0}" step="0.5" onchange="products[${i}].p0=parseFloat(this.value)"></div>
+      <div class="form-group"><label>Tasa %/día</label><input type="number" value="${p.rate}" step="0.1" onchange="products[${i}].rate=parseFloat(this.value)"></div>
+      <div class="form-group"><label>Cant./día (kg/L)</label><input type="number" value="${p.qty}" step="0.01" onchange="products[${i}].qty=parseFloat(this.value)"></div>
+      <button class="btn btn-danger" onclick="removeProduct(${i})" style="margin-bottom:0;padding:10px 12px">✕</button>
+    </div>
+  `).join('');
+}
+
+function addProduct() {
+  products.push({ name: 'Nuevo', p0: 10, rate: 0.3, qty: 0.1 });
+  renderProducts();
+}
+
+function removeProduct(i) {
+  if (products.length <= 1) return;
+  products.splice(i, 1);
+  renderProducts();
+}
+
+function loadCrisis() {
+  products = [
+    { name:'Papa', p0:8, rate:1.2, qty:0.3 },
+    { name:'Arroz', p0:6, rate:0.8, qty:0.2 },
+    { name:'Aceite', p0:18, rate:1.5, qty:0.05 },
+    { name:'Pollo', p0:22, rate:0.9, qty:0.15 },
+    { name:'Pan', p0:5, rate:0.6, qty:0.2 },
+  ];
+  document.getElementById('income').value = 2500;
+  document.getElementById('priceModel').value = 'exponencial';
+  renderProducts();
+}
+
+function loadNormal() {
+  products = [
+    { name:'Papa', p0:8, rate:0.1, qty:0.3 },
+    { name:'Arroz', p0:6, rate:0.05, qty:0.2 },
+    { name:'Aceite', p0:18, rate:0.08, qty:0.05 },
+    { name:'Pollo', p0:22, rate:0.1, qty:0.15 },
+  ];
+  document.getElementById('priceModel').value = 'lineal';
+  renderProducts();
+}
+
+function priceFunc(p0, rate, t, model) {
+  switch(model) {
+    case 'lineal': return p0 * (1 + rate/100 * t);
+    case 'exponencial': return p0 * Math.exp(rate/100 * t);
+    case 'cuadratico': return p0 * (1 + rate/100 * t * t / 10);
+    default: return p0;
+  }
+}
+
+// ── Integration methods ────────────────────────────────────────
+function trapecio(f, a, b, n) {
+  const h = (b-a)/n;
+  let s = f(a) + f(b);
+  for (let i = 1; i < n; i++) s += 2 * f(a + i*h);
+  return s * h/2;
+}
+
+function simpson13(f, a, b, n) {
+  if (n % 2 !== 0) n++;
+  const h = (b-a)/n;
+  let s = f(a) + f(b);
+  for (let i = 1; i < n; i++) s += (i%2===0 ? 2 : 4) * f(a + i*h);
+  return s * h/3;
+}
+
+function simpson38(f, a, b, n) {
+  // n must be multiple of 3
+  while (n % 3 !== 0) n++;
+  const h = (b-a)/n;
+  let s = f(a) + f(b);
+  for (let i = 1; i < n; i++) s += (i%3===0 ? 2 : 3) * f(a + i*h);
+  return s * 3*h/8;
+}
+
+function calculate() {
+  const income = parseFloat(document.getElementById('income').value);
+  const days = parseInt(document.getElementById('days').value);
+  const nSubs = parseInt(document.getElementById('nSubs').value);
+  const model = document.getElementById('priceModel').value;
+
+  // For each product, total cost curve
+  const allCurves = products.map(p => {
+    const f = t => priceFunc(p.p0, p.rate, t, model) * p.qty;
+    const daily = Array.from({length:days+1}, (_,i) => ({ t:i, cost: f(i) }));
+    const trap = trapecio(f, 0, days, nSubs);
+    const s13  = simpson13(f, 0, days, nSubs);
+    const s38  = simpson38(f, 0, days, nSubs);
+    const pFinal = priceFunc(p.p0, p.rate, days, model);
+    return { ...p, trap, s13, s38, daily, pFinal };
+  });
+
+  const totalTrap = allCurves.reduce((s,p)=>s+p.trap, 0);
+  const totalS13  = allCurves.reduce((s,p)=>s+p.s13, 0);
+  const totalS38  = allCurves.reduce((s,p)=>s+p.s38, 0);
+
+  // Baseline (no price increase)
+  const baseCost = products.reduce((s,p) => s + p.p0 * p.qty * days, 0);
+  const lossS13 = totalS13 - baseCost;
+  const lossPct = (lossS13 / baseCost * 100).toFixed(1);
+
+  let html = `
+    <div class="section">
+      <div class="section-header"><h2>Resultados — Gasto Mensual Familiar</h2><span class="badge">${days} DÍAS</span></div>
+      <div class="section-body">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-value">Bs ${totalS13.toFixed(2)}</div>
+            <div class="result-label">Gasto total (Simpson 1/3)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--red)">Bs ${lossS13.toFixed(2)}</div>
+            <div class="result-label">Pérdida poder adquisitivo</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:${totalS13>income?'var(--red)':'var(--green)'}">${(totalS13/income*100).toFixed(1)}%</div>
+            <div class="result-label">Del ingreso mensual</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--yellow)">+${lossPct}%</div>
+            <div class="result-label">Incremento vs sin crisis</div>
+          </div>
+        </div>
+
+        ${totalS13 > income ? `<div class="result-box error"><strong>⚠ DÉFICIT:</strong> El gasto en canasta básica (Bs ${totalS13.toFixed(2)}) supera el ingreso mensual (Bs ${income.toFixed(2)}). La familia no puede cubrir la canasta con su sueldo actual.</div>` : `<div class="result-box success"><strong>✓</strong> El gasto en canasta (Bs ${totalS13.toFixed(2)}) representa el ${(totalS13/income*100).toFixed(1)}% del ingreso. Deja Bs ${(income-totalS13).toFixed(2)} disponibles para otros gastos.</div>`}
+
+        <h4 style="color:var(--accent);font-size:13px;margin:16px 0 8px">Comparación de Métodos de Integración</h4>
+        <div class="comparison-grid">
+          <div class="comparison-card"><h4>Trapecio</h4><div class="val" style="color:var(--accent)">Bs ${totalTrap.toFixed(4)}</div><div class="sub">Error ~${Math.abs(totalTrap-totalS13).toFixed(4)} vs S1/3</div></div>
+          <div class="comparison-card"><h4>Simpson 1/3</h4><div class="val" style="color:var(--green)">Bs ${totalS13.toFixed(4)}</div><div class="sub">Referencia (más preciso)</div></div>
+          <div class="comparison-card"><h4>Simpson 3/8</h4><div class="val" style="color:var(--yellow)">Bs ${totalS38.toFixed(4)}</div><div class="sub">Error ~${Math.abs(totalS38-totalS13).toFixed(4)} vs S1/3</div></div>
+        </div>
+
+        <div class="chart-wrap" style="height:320px;margin-top:16px"><canvas id="chartD_main"></canvas></div>
+        <div class="chart-wrap" style="height:260px;margin-top:16px"><canvas id="chartD_products"></canvas></div>`;
+
+  // Per product breakdown
+  const prodHeaders = ['Producto','P₀ (Bs)','P₃₀ (Bs)','Gasto (Trap)','Gasto (S1/3)','Gasto (S3/8)','% del total'];
+  const prodRows = allCurves.map(p => [
+    p.name,
+    `Bs ${p.p0.toFixed(2)}`,
+    `Bs ${p.pFinal.toFixed(2)}`,
+    `Bs ${p.trap.toFixed(2)}`,
+    `Bs ${p.s13.toFixed(2)}`,
+    `Bs ${p.s38.toFixed(2)}`,
+    `${(p.s13/totalS13*100).toFixed(1)}%`
+  ]);
+  html += buildTable(prodHeaders, prodRows);
+
+  html += `
+    <div class="interpretation">
+      <h4>📊 Interpretación</h4>
+      <p>Con el modelo de precios <strong>${model}</strong>, la familia gasta <strong>Bs ${totalS13.toFixed(2)}</strong> en canasta básica durante ${days} días.
+      Esto es <strong>Bs ${lossS13.toFixed(2)} más</strong> que si los precios se hubieran mantenido estables — una pérdida del poder adquisitivo del <strong>${lossPct}%</strong>.
+      ${totalS13>income ? `<br><strong style="color:var(--red)">La canasta básica consume el ${(totalS13/income*100).toFixed(1)}% del ingreso — la familia necesita reducir consumo o buscar ingresos adicionales.</strong>` : ''}
+      <br>Simpson 1/3 es ${Math.abs(totalTrap-totalS13)<0.01?'prácticamente igual al trapecio para este caso':'más preciso que el trapecio'} con error de Bs ${Math.abs(totalTrap-totalS13).toFixed(4)}.
+      El producto con mayor impacto es <strong>${allCurves.sort((a,b)=>b.s13-a.s13)[0].name}</strong>.
+      </p>
+    </div>`;
+  html += '</div></div>';
+
+  showResult('results', html);
+
+  // Charts
+  const days_arr = Array.from({length:days+1},(_,i)=>i);
+  const totalDailyCost = days_arr.map(t => products.reduce((s,p) => s + priceFunc(p.p0,p.rate,t,model)*p.qty, 0));
+  const baseDailyCost = days_arr.map(_ => products.reduce((s,p) => s + p.p0*p.qty, 0));
+
+  setTimeout(() => {
+    getOrCreateChart('chartD_main', {
+      type:'line',
+      data: {
+        labels: days_arr,
+        datasets: [
+          { label:'Gasto diario canasta', data:totalDailyCost.map(v=>parseFloat(v.toFixed(2))), borderColor:'#ff6b35', backgroundColor:'rgba(255,107,53,0.1)', borderWidth:2.5, fill:true, pointRadius:0 },
+          { label:'Gasto sin crisis (base)', data:baseDailyCost.map(v=>parseFloat(v.toFixed(2))), borderColor:'#00ff9d', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, borderDash:[6,3] },
+          { label:`Ingreso diario disponible (Bs ${(income/days).toFixed(1)})`, data:days_arr.map(()=>parseFloat((income/days).toFixed(2))), borderColor:'#ffd60a', backgroundColor:'transparent', borderWidth:1, pointRadius:0, borderDash:[3,3] }
+        ]
+      },
+      options: { ...defaultChartOptions('Gasto diario en canasta básica'), scales:{x:{ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}},grid:{color:'rgba(42,58,92,0.5)'},title:{display:true,text:'Días',color:'#8892b0'}}, y:{ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}},grid:{color:'rgba(42,58,92,0.5)'},title:{display:true,text:'Bs/día',color:'#8892b0'}}}, plugins:{legend:{labels:{color:'#8892b0',font:{family:'Space Mono',size:10}}}, title:{display:true,text:'Costo diario de la canasta básica',color:'#e8eaf6',font:{family:'Syne',size:14,weight:'700'}}} }
+    });
+
+    getOrCreateChart('chartD_products', {
+      type:'bar',
+      data: {
+        labels: allCurves.map(p=>p.name),
+        datasets: [
+          { label:'Gasto total (Simpson 1/3)', data:allCurves.map(p=>parseFloat(p.s13.toFixed(2))), backgroundColor:['rgba(0,229,255,0.7)','rgba(0,255,157,0.7)','rgba(255,107,53,0.7)','rgba(255,214,10,0.7)','rgba(124,58,237,0.7)'], borderWidth:2 },
+          { label:'Sin crisis (base)', data:allCurves.map(p=>parseFloat((p.p0*p.qty*days).toFixed(2))), backgroundColor:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.3)', borderWidth:1 }
+        ]
+      },
+      options: { ...defaultChartOptions(), plugins:{legend:{labels:{color:'#8892b0',font:{family:'Space Mono',size:10}}}, title:{display:true,text:'Gasto mensual por producto (Bs)',color:'#e8eaf6',font:{family:'Syne',size:13,weight:'700'}}}, scales:{x:{ticks:{color:'#8892b0',font:{family:'Space Mono',size:10}},grid:{color:'rgba(42,58,92,0.5)'}}, y:{ticks:{color:'#8892b0',font:{family:'Space Mono',size:10}},grid:{color:'rgba(42,58,92,0.5)'}}} }
+    });
+  }, 100);
+}
+
+renderProducts();
+calculate();
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conclusiones - Metodos Numericos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">Conclusiones</div>
+    <h1>Conclusiones Generales<br>del Modelado Numerico</h1>
+    <p>Esta pagina resume lo aprendido al aplicar metodos numericos a los siete escenarios: abastecimiento, reservas, precios, gasto familiar, umbrales, rumores y dinamica social.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Que se Aprendio</h2><span class="badge">SINTESIS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>Modelar ayuda a decidir</h4>
+          <p class="sub">Los metodos numericos convierten datos dispersos en respuestas medibles: cuanto distribuir, cuando se agotan reservas, cuanto sube un precio o cuando aparece un umbral critico.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>El contexto cambia el resultado</h4>
+          <p class="sub">Bloqueos, rumores, panico y mediacion no son detalles externos: modifican matrices, ecuaciones, parametros y curvas. Por eso el modelo debe permitir simular escenarios.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>La precision importa</h4>
+          <p class="sub">Un paso h grande, datos incompletos o una matriz mal condicionada pueden cambiar la conclusion. La validacion con residuo, error e iteraciones es parte del analisis.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>El resultado debe interpretarse</h4>
+          <p class="sub">Un numero aislado no basta. Cada escenario traduce el calculo a una decision: priorizar zonas, reponer reservas, anticipar gasto o reducir tension social.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Metodo Mas Util</h2><span class="badge">COMPARACION</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Conclusion principal:</strong> no existe un unico metodo mejor para todo el proyecto. El metodo mas util depende del tipo de pregunta: sistemas lineales para distribucion, EDO para evolucion temporal, interpolacion para datos faltantes, integracion para gasto acumulado y raices para umbrales.
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Escenario</th><th>Metodo mas util</th><th>Por que fue util</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>A: Abastecimiento</td><td>LU / Gauss-Seidel</td><td>Resuelven la asignacion de recursos y permiten verificar restricciones de la red.</td></tr>
+            <tr><td>B: Reservas</td><td>RK4</td><td>Predice con mejor precision el vaciado de reservas ante demanda creciente o panico.</td></tr>
+            <tr><td>C: Precios</td><td>Splines cubicos</td><td>Reconstruyen curvas suaves y evitan oscilaciones fuertes entre datos de mercado.</td></tr>
+            <tr><td>D: Gasto familiar</td><td>Simpson 1/3</td><td>Calcula el gasto acumulado con alta precision para curvas de precios progresivas.</td></tr>
+            <tr><td>E: Umbrales</td><td>Biseccion / Secante</td><td>Encuentran puntos criticos de forma clara; biseccion es robusta y secante evita derivadas.</td></tr>
+            <tr><td>F: Rumores</td><td>Numero de condicion</td><td>Mide la sensibilidad de la red frente a perturbaciones pequeñas en la demanda.</td></tr>
+            <tr><td>G: Descontento social</td><td>RK4</td><td>Representa mejor la evolucion no lineal de neutrales, manifestantes y mediadores.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="interpretation">
+        <h4>Respuesta general</h4>
+        <p>El metodo mas completo para evolucion temporal fue <strong>RK4</strong>, porque aparece en reservas y dinamica social con buena precision. Para decisiones de abastecimiento, los <strong>sistemas lineales</strong> fueron los mas practicos, porque entregan una distribucion directa de recursos.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Limitaciones del Modelo</h2><span class="badge">CRITICA</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>Datos simplificados</h4>
+          <p class="sub">Los valores usados son academicos o ajustables. No reemplazan datos oficiales de inventarios, precios, rutas, consumo real o comportamiento social.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Supuestos fuertes</h4>
+          <p class="sub">Varios escenarios suponen crecimiento lineal, exponencial o relaciones constantes. En una crisis real los parametros cambian por decisiones politicas, clima, transporte y mercado informal.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Interaccion parcial</h4>
+          <p class="sub">Los escenarios se analizan por separado. En la realidad, precios, reservas, rumores y conflicto social se retroalimentan al mismo tiempo.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Validacion limitada</h4>
+          <p class="sub">El proyecto valida numericamente con errores, residuos y graficas, pero no calibra los modelos con una base historica completa.</p>
+        </div>
+      </div>
+      <div class="warn-box">
+        <strong>Alcance academico:</strong> los resultados sirven para comprender metodos numericos y explorar decisiones posibles, no para emitir predicciones definitivas sobre una situacion social real.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Mejoras Futuras</h2><span class="badge">PROPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>Datos reales conectados</h4>
+          <p class="sub">Importar precios, reservas, consumo y rutas desde archivos CSV o una API para actualizar los escenarios sin editar el codigo.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Modelo integrado</h4>
+          <p class="sub">Unir reservas, precios, rumores y descontento en un solo sistema donde cada resultado afecte a los demas.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Analisis de sensibilidad</h4>
+          <p class="sub">Variar automaticamente parametros como demanda, ingreso, tasa de reposicion y mediacion para identificar cuales influyen mas.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Alertas visuales</h4>
+          <p class="sub">Agregar semaforos, mapas de riesgo y recomendaciones automaticas cuando se cruce un umbral critico.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Comparacion historica</h4>
+          <p class="sub">Calibrar los modelos con datos de periodos anteriores para medir error real y ajustar parametros.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>Exportacion de resultados</h4>
+          <p class="sub">Permitir descargar tablas y graficas en PDF o Excel para presentar el analisis completo del grupo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Conclusion Final</h2><span class="badge">CIERRE</span></div>
+    <div class="section-body">
+      <div class="result-box success">
+        <p>El proyecto demuestra que los metodos numericos permiten transformar una situacion compleja en modelos calculables, comparables y visuales. Aunque cada escenario tiene limites, el conjunto muestra una idea central: con datos, supuestos claros y validacion numerica, es posible anticipar riesgos, justificar decisiones y entender mejor la relacion entre abastecimiento, precios y comportamiento social.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>Desafio Final de <strong>Metodos Numericos</strong> - Conclusiones Generales</p>
+</footer>
+
+<script src="../js/shared.js"></script>
+<script>buildNav('conclusiones');</script>
+</body>
+</html>

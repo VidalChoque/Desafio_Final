@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario G - Difusion de Opinion | Metodos Numericos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">Escenario G</div>
+    <h1>Modelo de Difusion de Opinion<br>y Descontento Social</h1>
+    <p>Se simula un sistema dinamico N-M-D: ciudadanos neutrales, manifestantes y mediadores. La evolucion se resuelve con Heun o Runge-Kutta de cuarto orden para comparar estabilidad, pico de conflicto y efecto de mediacion.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situacion Bolivia:</strong> el aumento de precios, filas y escasez puede transformar ciudadanos neutrales en manifestantes. La mediacion social e institucional reduce la tension y puede devolver parte de la poblacion a estados neutrales.
+      </div>
+      <div class="formula">
+        dN/dt = -beta N M + gamma M + rho D<br>
+        dM/dt = beta N M - gamma M - mu M D<br>
+        dD/dt = mu M D - rho D
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Parametros del Sistema</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Neutrales iniciales N0</label><input type="number" id="n0" value="0.78" min="0" max="1" step="0.01"></div>
+        <div class="form-group"><label>Manifestantes iniciales M0</label><input type="number" id="m0" value="0.12" min="0" max="1" step="0.01"></div>
+        <div class="form-group"><label>Mediadores iniciales D0</label><input type="number" id="d0" value="0.10" min="0" max="1" step="0.01"></div>
+        <div class="form-group"><label>Contagio beta</label><input type="number" id="beta" value="1.35" min="0" step="0.05"></div>
+        <div class="form-group"><label>Retorno gamma</label><input type="number" id="gamma" value="0.28" min="0" step="0.01"></div>
+        <div class="form-group"><label>Mediacion mu</label><input type="number" id="mu" value="0.90" min="0" step="0.05"></div>
+        <div class="form-group"><label>Desgaste mediador rho</label><input type="number" id="rho" value="0.18" min="0" step="0.01"></div>
+        <div class="form-group"><label>Dias</label><input type="number" id="days" value="20" min="1" step="1"></div>
+        <div class="form-group"><label>Paso h</label><input type="number" id="h" value="0.1" min="0.01" step="0.01"></div>
+        <div class="form-group"><label>Metodo</label><select id="method"><option value="rk4">Runge-Kutta 4</option><option value="heun">Heun</option></select></div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="simulate()">Simular dinamica</button>
+        <button class="btn btn-secondary" onclick="loadHighConflict()">Escalada</button>
+        <button class="btn btn-secondary" onclick="loadMediation()">Mediacion fuerte</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card"><h4>1. Cuando crece el conflicto?</h4><p class="sub">Crece cuando beta supera la capacidad combinada de retorno y mediacion. En la grafica se observa como aumenta la variable M.</p></div>
+        <div class="comparison-card"><h4>2. Que hace la mediacion?</h4><p class="sub">Un valor mayor de mu reduce el pico de manifestantes y acelera la estabilizacion, porque transforma tension social en negociacion o retorno a neutralidad.</p></div>
+        <div class="comparison-card"><h4>3. Cual es el dia de mayor riesgo?</h4><p class="sub">La simulacion identifica el dia donde M alcanza su maximo. Ese pico es el momento donde se requiere mayor intervencion institucional o comunitaria.</p></div>
+        <div class="comparison-card"><h4>4. Que metodo conviene?</h4><p class="sub">RK4 es mas preciso con pasos grandes; Heun es mas simple y suficiente si el paso h es pequeno. Ambos permiten comparar la evolucion N-M-D.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Metodos Numericos</h2><span class="badge">TEORIA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tg-heun">Heun</button>
+        <button class="tab-btn" data-tab="tg-rk4">RK4</button>
+        <button class="tab-btn" data-tab="tg-modelo">Sistema N-M-D</button>
+      </div>
+      <div id="tg-heun" class="tab-panel active">
+        <div class="formula">y* = y_n + h f(t_n, y_n)<br>y_{n+1} = y_n + h/2 [f(t_n,y_n) + f(t+h,y*)]</div>
+        <p>Heun corrige la pendiente de Euler promediando prediccion y correccion. Es util para explicar la dinamica sin demasiada carga computacional.</p>
+      </div>
+      <div id="tg-rk4" class="tab-panel">
+        <div class="formula">y_{n+1} = y_n + h/6 (k1 + 2k2 + 2k3 + k4)</div>
+        <p>RK4 calcula cuatro pendientes por paso. Da mejor precision para trayectorias no lineales como el crecimiento y reduccion de manifestantes.</p>
+      </div>
+      <div id="tg-modelo" class="tab-panel">
+        <p>El sistema conserva aproximadamente la poblacion total N+M+D=1. Esto permite interpretar los resultados como proporciones de la poblacion social observada.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>Desafio Final de <strong>Metodos Numericos</strong> - Escenario G - Ecuaciones Diferenciales</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('g');
+initTabs();
+
+function deriv(y) {
+  const beta = parseFloat(document.getElementById('beta').value);
+  const gamma = parseFloat(document.getElementById('gamma').value);
+  const mu = parseFloat(document.getElementById('mu').value);
+  const rho = parseFloat(document.getElementById('rho').value);
+  const [N, M, D] = y;
+  return [
+    -beta * N * M + gamma * M + rho * D,
+    beta * N * M - gamma * M - mu * M * D,
+    mu * M * D - rho * D
+  ];
+}
+
+function add(y, k, scale) {
+  return y.map((v, i) => Math.max(0, v + scale * k[i]));
+}
+
+function normalize(y) {
+  const s = y.reduce((a, b) => a + b, 0) || 1;
+  return y.map(v => v / s);
+}
+
+function stepHeun(y, h) {
+  const k1 = deriv(y);
+  const pred = add(y, k1, h);
+  const k2 = deriv(pred);
+  return normalize(y.map((v, i) => v + h * (k1[i] + k2[i]) / 2));
+}
+
+function stepRK4(y, h) {
+  const k1 = deriv(y);
+  const k2 = deriv(add(y, k1, h / 2));
+  const k3 = deriv(add(y, k2, h / 2));
+  const k4 = deriv(add(y, k3, h));
+  return normalize(y.map((v, i) => v + h * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]) / 6));
+}
+
+function loadHighConflict() {
+  document.getElementById('beta').value = 1.90;
+  document.getElementById('gamma').value = 0.18;
+  document.getElementById('mu').value = 0.45;
+  document.getElementById('rho').value = 0.24;
+}
+
+function loadMediation() {
+  document.getElementById('beta').value = 1.20;
+  document.getElementById('gamma').value = 0.32;
+  document.getElementById('mu').value = 1.45;
+  document.getElementById('rho').value = 0.12;
+}
+
+function simulate() {
+  const h = parseFloat(document.getElementById('h').value);
+  const days = parseFloat(document.getElementById('days').value);
+  const method = document.getElementById('method').value;
+  let y = normalize([
+    parseFloat(document.getElementById('n0').value),
+    parseFloat(document.getElementById('m0').value),
+    parseFloat(document.getElementById('d0').value)
+  ]);
+  const rows = [];
+  for (let t = 0; t <= days + 1e-9; t += h) {
+    rows.push({ t, N: y[0], M: y[1], D: y[2] });
+    y = method === 'rk4' ? stepRK4(y, h) : stepHeun(y, h);
+  }
+  const peak = rows.reduce((best, r) => r.M > best.M ? r : best, rows[0]);
+  const last = rows[rows.length - 1];
+  const status = last.M < 0.15 ? 'estable' : last.M < 0.35 ? 'tension media' : 'conflicto alto';
+
+  let html = `<div class="section"><div class="section-header"><h2>Resultados de la Simulacion</h2><span class="badge">${method.toUpperCase()}</span></div><div class="section-body">`;
+  html += `<div class="result-grid">
+    <div class="result-item"><div class="result-value">${(peak.M*100).toFixed(1)}%</div><div class="result-label">Pico manifestante dia ${peak.t.toFixed(1)}</div></div>
+    <div class="result-item"><div class="result-value">${(last.M*100).toFixed(1)}%</div><div class="result-label">Manifestantes finales</div></div>
+    <div class="result-item"><div class="result-value" style="color:${status==='estable'?'var(--green)':status==='tension media'?'var(--yellow)':'var(--red)'}">${status}</div><div class="result-label">Diagnostico</div></div>
+  </div>`;
+  html += `<div class="chart-wrap"><canvas id="chartG"></canvas></div>`;
+  html += buildTable(['Dia','Neutrales','Manifestantes','Mediadores'], rows.filter((_, i) => i % Math.max(1, Math.round(1/h)) === 0).slice(-12).map(r => [r.t.toFixed(0), (r.N*100).toFixed(2)+'%', (r.M*100).toFixed(2)+'%', (r.D*100).toFixed(2)+'%']));
+  html += `<div class="interpretation"><h4>Interpretacion</h4><p>El conflicto alcanza su maximo en el dia <strong>${peak.t.toFixed(1)}</strong>. Al final del periodo queda en estado <strong>${status}</strong>. Si se incrementa la mediacion o el retorno a neutralidad, el pico baja; si aumenta el contagio social beta, el pico sube y aparece antes.</p></div>`;
+  html += `</div></div>`;
+  showResult('results', html);
+
+  setTimeout(() => {
+    getOrCreateChart('chartG', {
+      type: 'line',
+      data: {
+        labels: rows.map(r => +r.t.toFixed(2)),
+        datasets: [
+          { label: 'Neutrales', data: rows.map(r => +(r.N*100).toFixed(2)), borderColor: '#00e5ff', backgroundColor: 'rgba(0,229,255,0.08)', borderWidth: 2, pointRadius: 0 },
+          { label: 'Manifestantes', data: rows.map(r => +(r.M*100).toFixed(2)), borderColor: '#ff4757', backgroundColor: 'rgba(255,71,87,0.08)', borderWidth: 2, pointRadius: 0 },
+          { label: 'Mediadores', data: rows.map(r => +(r.D*100).toFixed(2)), borderColor: '#00ff9d', backgroundColor: 'rgba(0,255,157,0.08)', borderWidth: 2, pointRadius: 0 }
+        ]
+      },
+      options: defaultChartOptions('Evolucion social N-M-D (%)')
+    });
+  }, 100);
+}
+
+simulate();
+</script>
+</body>
+</html>

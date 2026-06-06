@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario F - Rumores y Panico | Metodos Numericos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">Escenario F</div>
+    <h1>Rumores y Panico<br>en la Red de Distribucion</h1>
+    <p>Se modela como una pequena perturbacion en la demanda puede amplificarse dentro de una red de abastecimiento. El analisis compara demanda normal contra demanda por rumores usando sistemas lineales, numero de condicion y sensibilidad.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situacion Bolivia:</strong> cuando circula el rumor de escasez, las familias compran mas combustible o alimentos de lo habitual. Aunque el cambio inicial parezca pequeno, una red mal condicionada puede producir asignaciones inestables entre zonas.
+      </div>
+      <div class="formula">
+        A x = b<br>
+        A: restricciones entre zonas y rutas<br>
+        x: asignacion calculada por zona<br>
+        b: demanda observada normal o perturbada por rumor
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Datos de Simulacion</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Rumor zona norte (%)</label><input type="number" id="rN" value="18" step="1"></div>
+        <div class="form-group"><label>Rumor zona centro (%)</label><input type="number" id="rC" value="12" step="1"></div>
+        <div class="form-group"><label>Rumor zona sur (%)</label><input type="number" id="rS" value="25" step="1"></div>
+        <div class="form-group"><label>Factor de acoplamiento</label><input type="number" id="coupling" value="0.82" min="0.1" max="0.98" step="0.01"></div>
+      </div>
+      <div class="info-box">
+        El factor de acoplamiento representa cuanto depende una zona de las demas. Mientras mas cercano a 1, el sistema queda peor condicionado y la red se vuelve mas sensible a rumores.
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="solveRumor()">Resolver impacto</button>
+        <button class="btn btn-secondary" onclick="loadStable()">Red estable</button>
+        <button class="btn btn-secondary" onclick="loadFragile()">Red fragil</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card"><h4>1. Que provoca el rumor?</h4><p class="sub">Aumenta el vector b de demanda. Si la matriz A esta mal condicionada, la asignacion x cambia mas que la perturbacion original.</p></div>
+        <div class="comparison-card"><h4>2. Como se mide el riesgo?</h4><p class="sub">Con cond(A) y con el error relativo. Un valor alto indica que pequenos rumores generan decisiones numericas inestables.</p></div>
+        <div class="comparison-card"><h4>3. Que zona se prioriza?</h4><p class="sub">La zona con mayor incremento relativo debe recibir control de filas, informacion publica y reposicion planificada para reducir compras impulsivas.</p></div>
+        <div class="comparison-card"><h4>4. Cuando la solucion deja de ser confiable?</h4><p class="sub">Cuando cond(A) es alto y el cambio relativo en x supera claramente al cambio en b. En ese caso se recomienda redisenar restricciones o usar datos mas estables.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>Fundamento Numerico</h2><span class="badge">TEORIA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tf-cond">Numero de condicion</button>
+        <button class="tab-btn" data-tab="tf-pert">Perturbacion</button>
+        <button class="tab-btn" data-tab="tf-lin">Sistema lineal</button>
+      </div>
+      <div id="tf-cond" class="tab-panel active">
+        <div class="formula">cond(A) = ||A|| * ||A^-1||</div>
+        <p>El numero de condicion estima la sensibilidad del sistema. Si cond(A) es grande, una variacion pequena en la demanda puede producir una variacion grande en la asignacion calculada.</p>
+      </div>
+      <div id="tf-pert" class="tab-panel">
+        <div class="formula">error relativo en x <= cond(A) * error relativo en b</div>
+        <p>El rumor entra como perturbacion del vector de demanda. La desigualdad permite decidir si el resultado es confiable o si debe tratarse como escenario de alto riesgo.</p>
+      </div>
+      <div id="tf-lin" class="tab-panel">
+        <div class="formula">x = A^-1 b</div>
+        <p>Resolver el sistema permite comparar la red antes y despues del rumor, manteniendo las mismas rutas y cambiando solo la demanda observada.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>Desafio Final de <strong>Metodos Numericos</strong> - Escenario F - Sensibilidad y Sistemas Lineales</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('f');
+initTabs();
+
+const baseB = [420, 360, 390];
+const zones = ['Norte', 'Centro', 'Sur'];
+
+function buildA(c) {
+  return [
+    [1, -0.45*c, -0.30*c],
+    [-0.35*c, 1, -0.40*c],
+    [-0.25*c, -0.50*c, 1]
+  ];
+}
+
+function cloneM(A) { return A.map(r => [...r]); }
+
+function solveLinear(A, b) {
+  const n = b.length, M = cloneM(A), y = [...b];
+  for (let k = 0; k < n; k++) {
+    let pivot = k;
+    for (let i = k + 1; i < n; i++) if (Math.abs(M[i][k]) > Math.abs(M[pivot][k])) pivot = i;
+    if (Math.abs(M[pivot][k]) < 1e-12) throw new Error('Matriz singular o casi singular');
+    [M[k], M[pivot]] = [M[pivot], M[k]];
+    [y[k], y[pivot]] = [y[pivot], y[k]];
+    for (let i = k + 1; i < n; i++) {
+      const factor = M[i][k] / M[k][k];
+      for (let j = k; j < n; j++) M[i][j] -= factor * M[k][j];
+      y[i] -= factor * y[k];
+    }
+  }
+  const x = Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = y[i];
+    for (let j = i + 1; j < n; j++) sum -= M[i][j] * x[j];
+    x[i] = sum / M[i][i];
+  }
+  return x;
+}
+
+function inverse(A) {
+  const n = A.length;
+  return Array.from({ length: n }, (_, col) => {
+    const e = Array(n).fill(0);
+    e[col] = 1;
+    return solveLinear(A, e);
+  }).reduce((inv, colVector, col) => {
+    colVector.forEach((v, row) => inv[row][col] = v);
+    return inv;
+  }, Array.from({ length: n }, () => Array(n).fill(0)));
+}
+
+function normInf(A) {
+  return Math.max(...A.map(row => row.reduce((s, v) => s + Math.abs(v), 0)));
+}
+
+function relNorm(a, b) {
+  const num = Math.max(...a.map((v, i) => Math.abs(v - b[i])));
+  const den = Math.max(...b.map(v => Math.abs(v))) || 1;
+  return num / den;
+}
+
+function loadStable() {
+  document.getElementById('coupling').value = 0.45;
+  document.getElementById('rN').value = 10;
+  document.getElementById('rC').value = 8;
+  document.getElementById('rS').value = 12;
+}
+
+function loadFragile() {
+  document.getElementById('coupling').value = 0.94;
+  document.getElementById('rN').value = 18;
+  document.getElementById('rC').value = 12;
+  document.getElementById('rS').value = 25;
+}
+
+function solveRumor() {
+  const rumors = [
+    parseFloat(document.getElementById('rN').value) / 100,
+    parseFloat(document.getElementById('rC').value) / 100,
+    parseFloat(document.getElementById('rS').value) / 100
+  ];
+  const c = parseFloat(document.getElementById('coupling').value);
+  const A = buildA(c);
+  const bRumor = baseB.map((v, i) => v * (1 + rumors[i]));
+  let x0, x1, cond;
+  try {
+    x0 = solveLinear(A, baseB);
+    x1 = solveLinear(A, bRumor);
+    cond = normInf(A) * normInf(inverse(A));
+  } catch (e) {
+    showResult('results', `<div class="result-box error"><p>${e.message}</p></div>`);
+    return;
+  }
+
+  const eb = relNorm(bRumor, baseB);
+  const ex = relNorm(x1, x0);
+  const worst = x1.map((v, i) => ({ i, inc: (v - x0[i]) / x0[i] })).sort((a, b) => b.inc - a.inc)[0];
+  const risk = cond > 10 ? 'alto' : cond > 4 ? 'medio' : 'bajo';
+
+  let html = `<div class="section"><div class="section-header"><h2>Resultados del Impacto</h2><span class="badge">cond(A)=${cond.toFixed(2)}</span></div><div class="section-body">`;
+  html += `<div class="result-grid">
+    <div class="result-item"><div class="result-value">${(eb*100).toFixed(2)}%</div><div class="result-label">Perturbacion en demanda</div></div>
+    <div class="result-item"><div class="result-value">${(ex*100).toFixed(2)}%</div><div class="result-label">Cambio en solucion</div></div>
+    <div class="result-item"><div class="result-value" style="color:${risk==='alto'?'var(--red)':risk==='medio'?'var(--yellow)':'var(--green)'}">${risk}</div><div class="result-label">Riesgo numerico</div></div>
+  </div>`;
+  html += buildTable(['Zona','Normal','Con rumor','Incremento'], zones.map((z, i) => [z, x0[i].toFixed(2), x1[i].toFixed(2), `${((x1[i]-x0[i])/x0[i]*100).toFixed(2)}%`]));
+  html += `<div class="chart-wrap"><canvas id="chartF"></canvas></div>`;
+  html += `<div class="interpretation"><h4>Interpretacion</h4><p>La zona mas sensible es <strong>${zones[worst.i]}</strong>, con incremento de asignacion de <strong>${(worst.inc*100).toFixed(2)}%</strong>. El numero de condicion ${cond.toFixed(2)} indica riesgo ${risk}: si la red esta muy acoplada, el rumor no solo sube la demanda, tambien distorsiona la solucion numerica.</p></div>`;
+  html += `</div></div>`;
+  showResult('results', html);
+
+  setTimeout(() => {
+    getOrCreateChart('chartF', {
+      type: 'bar',
+      data: {
+        labels: zones,
+        datasets: [
+          { label: 'Normal', data: x0.map(v => +v.toFixed(2)), backgroundColor: 'rgba(0,229,255,0.55)', borderColor: '#00e5ff', borderWidth: 2 },
+          { label: 'Con rumor', data: x1.map(v => +v.toFixed(2)), backgroundColor: 'rgba(255,71,87,0.55)', borderColor: '#ff4757', borderWidth: 2 }
+        ]
+      },
+      options: defaultChartOptions('Asignacion antes y despues del rumor')
+    });
+  }, 100);
+}
+
+solveRumor();
+</script>
+</body>
+</html>

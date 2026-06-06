@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario E — Umbrales · Métodos Numéricos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">⬡ Escenario E</div>
+    <h1>Umbrales Críticos<br>de Abastecimiento</h1>
+    <p>Cálculo de puntos de equilibrio mediante raíces de ecuaciones no lineales: dónde el costo supera el ingreso, la tasa de reposición crítica de carburante y el umbral de opinion social.</p>
+  </div>
+
+  <!-- CONTEXT -->
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situación Bolivia:</strong> ¿En qué día el gasto de una familia supera su ingreso mensual? ¿A qué tasa de reposición el combustible se equilibra? ¿Cuándo el descontento social cruza el umbral crítico? Estas preguntas se responden encontrando raíces de ecuaciones no lineales.
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM SELECTOR -->
+  <div class="section">
+    <div class="section-header"><h2>Selección del Problema</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="te-p1">P1: Costo vs Ingreso</button>
+        <button class="tab-btn" data-tab="te-p2">P2: Tasa Crítica Carburante</button>
+        <button class="tab-btn" data-tab="te-p3">P3: Umbral Social</button>
+      </div>
+
+      <!-- P1: cost exceeds income -->
+      <div id="te-p1" class="tab-panel active">
+        <div class="info-box">
+          <strong>Problema:</strong> f(t) = Gasto_acumulado(t) − Ingreso_disp(t) = 0<br>
+          Encontrar el día t* donde el gasto acumulado iguala el presupuesto familiar.
+        </div>
+        <div class="formula">f(t) = P₀·e^(r·t)·q·t − I = 0<br>donde P₀=precio inicial, r=tasa, q=cantidad/día, I=ingreso mensual</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Precio inicial P₀ (Bs/kg)</label><input type="number" id="p1_p0" value="8" step="0.5"></div>
+          <div class="form-group"><label>Tasa diaria r (%)</label><input type="number" id="p1_r" value="1.5" step="0.1"></div>
+          <div class="form-group"><label>Cantidad q (kg/día)</label><input type="number" id="p1_q" value="0.8" step="0.05"></div>
+          <div class="form-group"><label>Ingreso mensual I (Bs)</label><input type="number" id="p1_I" value="2500" step="100"></div>
+          <div class="form-group"><label>Método</label>
+            <select id="p1_method">
+              <option value="biseccion">Bisección</option>
+              <option value="newton">Newton-Raphson</option>
+              <option value="secante">Secante</option>
+            </select>
+          </div>
+          <div class="form-group"><label>x₀ inicial</label><input type="number" id="p1_x0" value="15" step="1"></div>
+        </div>
+        <div class="form-grid" id="p1_bisGrid">
+          <div class="form-group"><label>a (bisección)</label><input type="number" id="p1_a" value="5" step="1"></div>
+          <div class="form-group"><label>b (bisección)</label><input type="number" id="p1_b" value="30" step="1"></div>
+        </div>
+        <div class="form-group" style="max-width:200px"><label>Tolerancia</label><input type="number" id="p1_tol" value="0.0001" step="0.00001"></div>
+        <div class="btn-group" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="solveP1()">▶ Encontrar Umbral</button>
+        </div>
+        <div id="p1_results"></div>
+      </div>
+
+      <!-- P2: fuel replenishment critical rate -->
+      <div id="te-p2" class="tab-panel">
+        <div class="info-box">
+          <strong>Problema:</strong> g(Q) = R₀ + Q·T − D₀·T = 0<br>
+          Encontrar la tasa de entrada Q* que equilibra el consumo D₀ durante T días.
+        </div>
+        <div class="formula">g(Q) = (Q − D₀)·T + R₀ − R_crit = 0<br>Q* = tasa crítica de reposición para no vaciar las reservas</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Reserva inicial R₀ (L)</label><input type="number" id="p2_R0" value="50000" step="1000"></div>
+          <div class="form-group"><label>Consumo D₀ (L/día)</label><input type="number" id="p2_D0" value="12000" step="500"></div>
+          <div class="form-group"><label>Período T (días)</label><input type="number" id="p2_T" value="30" step="1"></div>
+          <div class="form-group"><label>Nivel crítico R_crit (L)</label><input type="number" id="p2_Rcrit" value="5000" step="500"></div>
+          <div class="form-group"><label>Tasa de crecimiento consumo α</label><input type="number" id="p2_alpha" value="0.05" step="0.01"></div>
+          <div class="form-group"><label>Método</label>
+            <select id="p2_method">
+              <option value="biseccion">Bisección</option>
+              <option value="newton">Newton-Raphson</option>
+              <option value="secante">Secante</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>a</label><input type="number" id="p2_a" value="8000" step="100"></div>
+          <div class="form-group"><label>b / x₀</label><input type="number" id="p2_b" value="15000" step="100"></div>
+          <div class="form-group"><label>Tolerancia</label><input type="number" id="p2_tol" value="1" step="0.1"></div>
+        </div>
+        <div class="btn-group" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="solveP2()">▶ Encontrar Tasa Crítica</button>
+        </div>
+        <div id="p2_results"></div>
+      </div>
+
+      <!-- P3: social opinion threshold -->
+      <div id="te-p3" class="tab-panel">
+        <div class="info-box">
+          <strong>Problema:</strong> h(x) = descontento − umbral_estabilidad = 0<br>
+          Encontrar el nivel de malestar social x* donde el sistema cambia de estable a masificado.
+        </div>
+        <div class="formula">h(x) = a·x³ − b·x² + c·x − d = 0<br>Polinomio que modela la función de tensión social vs. respuesta institucional</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Coef. a (cúbico)</label><input type="number" id="p3_a" value="0.1" step="0.01"></div>
+          <div class="form-group"><label>Coef. b (cuad)</label><input type="number" id="p3_b" value="1.5" step="0.1"></div>
+          <div class="form-group"><label>Coef. c (lineal)</label><input type="number" id="p3_c" value="5" step="0.1"></div>
+          <div class="form-group"><label>Coef. d (cte)</label><input type="number" id="p3_d" value="10" step="0.5"></div>
+          <div class="form-group"><label>Método</label>
+            <select id="p3_method">
+              <option value="biseccion">Bisección</option>
+              <option value="newton">Newton-Raphson</option>
+              <option value="secante">Secante</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>a (bisección)</label><input type="number" id="p3_a2" value="2" step="0.5"></div>
+          <div class="form-group"><label>b / x₀</label><input type="number" id="p3_b2" value="15" step="0.5"></div>
+          <div class="form-group"><label>Tolerancia</label><input type="number" id="p3_tol" value="0.0001"></div>
+        </div>
+        <div class="btn-group" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="solveP3()">▶ Encontrar Umbral Social</button>
+        </div>
+        <div id="p3_results"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTIONS -->
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>1. En que dia el gasto iguala al ingreso?</h4>
+          <p class="sub">Se resuelve f(t)=Gasto(t)-Ingreso=0. La raiz t* marca el dia en que la familia deja de cubrir la canasta con su presupuesto disponible.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>2. Cual es la tasa minima de reposicion?</h4>
+          <p class="sub">Se resuelve g(Q)=0 para encontrar Q*. Si la entrada diaria es menor que esa raiz, la reserva cae por debajo del nivel critico.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>3. Cuando el descontento cruza el umbral?</h4>
+          <p class="sub">Se resuelve h(x)=0. La raiz indica el nivel de tension donde el sistema pasa de malestar contenido a riesgo de movilizacion masiva.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>4. Que metodo de raices es adecuado?</h4>
+          <p class="sub">Biseccion es robusta si hay cambio de signo; Newton-Raphson es rapido con buena condicion inicial; Secante evita derivadas y funciona como punto medio practico.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY -->
+  <div class="section">
+    <div class="section-header"><h2>Métodos de Búsqueda de Raíces</h2><span class="badge">TEORÍA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="te-bis">Bisección</button>
+        <button class="tab-btn" data-tab="te-nr">Newton-Raphson</button>
+        <button class="tab-btn" data-tab="te-sec">Secante</button>
+      </div>
+      <div id="te-bis" class="tab-panel active">
+        <div class="formula">x_mid = (a+b)/2<br>Si f(a)·f(x_mid) &lt; 0 → b=x_mid, else a=x_mid</div>
+        <p>Bisección divide el intervalo a la mitad iterativamente. Convergencia garantizada si existe raíz en [a,b]. Convergencia lineal — O(log₂((b-a)/ε)) iteraciones. Robusto pero lento.</p>
+      </div>
+      <div id="te-nr" class="tab-panel">
+        <div class="formula">x_{k+1} = x_k − f(x_k)/f'(x_k)</div>
+        <p>Newton-Raphson usa la tangente para converger cuadráticamente. Muy rápido cerca de la raíz. Requiere f'(x) — se calcula numéricamente con diferencias finitas. Puede divergir si la condición inicial está lejos de la raíz o f'≈0.</p>
+      </div>
+      <div id="te-sec" class="tab-panel">
+        <div class="formula">x_{k+1} = x_k − f(x_k)·(x_k − x_{k-1})/(f(x_k) − f(x_{k-1}))</div>
+        <p>La secante evita calcular f'. Usa dos puntos anteriores para aproximar la derivada. Convergencia superlineal (≈1.618). Balance ideal entre bisección y Newton-Raphson para umbrales de abastecimiento.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Desafío Final de <strong>Métodos Numéricos</strong> · Escenario E · Raíces de Ecuaciones</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('e');
+initTabs();
+
+// ── GENERIC ROOT SOLVERS ───────────────────────────────────────
+function biseccion(f, a, b, tol, maxIter=200) {
+  const iters = [];
+  if (f(a)*f(b) > 0) return { error: 'f(a) y f(b) deben tener signos opuestos', iters };
+  for (let k = 0; k < maxIter; k++) {
+    const mid = (a+b)/2, fm = f(mid);
+    iters.push({ k:k+1, a:parseFloat(a.toFixed(8)), b:parseFloat(b.toFixed(8)), mid:parseFloat(mid.toFixed(8)), fm:parseFloat(fm.toFixed(8)), err:parseFloat(((b-a)/2).toFixed(8)) });
+    if (Math.abs(fm) < tol || (b-a)/2 < tol) return { root: mid, iters };
+    if (f(a)*fm < 0) b = mid; else a = mid;
+  }
+  return { root: (a+b)/2, iters };
+}
+
+function newtonRaphson(f, x0, tol, maxIter=100) {
+  const iters = [];
+  let x = x0;
+  for (let k = 0; k < maxIter; k++) {
+    const fx = f(x);
+    const fpx = (f(x+1e-7) - f(x-1e-7)) / (2e-7); // numerical derivative
+    if (Math.abs(fpx) < 1e-14) return { error: "f'(x) ≈ 0", iters };
+    const xNew = x - fx/fpx;
+    iters.push({ k:k+1, x:parseFloat(x.toFixed(8)), fx:parseFloat(fx.toFixed(8)), fpx:parseFloat(fpx.toFixed(8)), xNew:parseFloat(xNew.toFixed(8)), err:parseFloat(Math.abs(xNew-x).toFixed(8)) });
+    if (Math.abs(xNew - x) < tol) return { root: xNew, iters };
+    x = xNew;
+  }
+  return { root: x, iters };
+}
+
+function secante(f, x0, x1, tol, maxIter=100) {
+  const iters = [];
+  let xOld = x0, x = x1;
+  for (let k = 0; k < maxIter; k++) {
+    const fx = f(x), fOld = f(xOld);
+    if (Math.abs(fx-fOld) < 1e-14) return { error: 'Denominador → 0', iters };
+    const xNew = x - fx*(x-xOld)/(fx-fOld);
+    iters.push({ k:k+1, x0:parseFloat(xOld.toFixed(8)), x1:parseFloat(x.toFixed(8)), x2:parseFloat(xNew.toFixed(8)), err:parseFloat(Math.abs(xNew-x).toFixed(8)) });
+    if (Math.abs(xNew - x) < tol) return { root: xNew, iters };
+    xOld = x; x = xNew;
+  }
+  return { root: x, iters };
+}
+
+function runMethod(method, f, params) {
+  if (method === 'biseccion') return biseccion(f, params.a, params.b, params.tol);
+  if (method === 'newton') return newtonRaphson(f, params.x0, params.tol);
+  if (method === 'secante') return secante(f, params.a, params.b, params.tol);
+}
+
+function renderRootResult(containerId, result, xLabel, fLabel, units, interpretation, f, plotRange) {
+  if (result.error) {
+    document.getElementById(containerId).innerHTML = `<div class="result-box error"><p>Error: ${result.error}</p></div>`;
+    return;
+  }
+  const { root, iters } = result;
+  const fRoot = f(root);
+  const convRate = iters.length > 4 ? (Math.log(iters[iters.length-1].err / iters[iters.length-2].err) / Math.log(iters[iters.length-2].err / (iters[iters.length-3]?.err||1))).toFixed(2) : '—';
+
+  let html = `
+    <div class="result-box success" style="margin-top:16px">
+      <div class="result-grid">
+        <div class="result-item"><div class="result-value">${root.toFixed(4)} <span style="font-size:14px">${units}</span></div><div class="result-label">Raíz — ${xLabel}</div></div>
+        <div class="result-item"><div class="result-value" style="color:var(--green)">${fRoot.toExponential(3)}</div><div class="result-label">f(x*) — residuo</div></div>
+        <div class="result-item"><div class="result-value" style="color:var(--yellow)">${iters.length}</div><div class="result-label">Iteraciones</div></div>
+      </div>
+    </div>`;
+
+  // Function graph
+  const N = 200;
+  const [xa, xb] = plotRange;
+  const xs = Array.from({length:N+1}, (_,i) => xa + (xb-xa)*i/N);
+  const ys = xs.map(x => f(x));
+
+  html += `<div class="chart-wrap" style="height:280px;margin-top:16px"><canvas id="${containerId}_chart"></canvas></div>`;
+
+  // Iteration table (last 12)
+  const show = iters.slice(-12);
+  const firstKey = Object.keys(iters[0]||{})[1];
+  const headers = Object.keys(iters[0]||{}).map(k => k === 'k' ? 'Iter.' : k);
+  const rows = show.map(it => Object.values(it));
+  html += buildTable(headers, rows);
+
+  html += `<div class="interpretation"><h4>📊 Interpretación</h4><p>${interpretation(root)}<br>Convergió en <strong>${iters.length} iteraciones</strong>. El residuo f(x*)=${fRoot.toExponential(3)} confirma la precisión.</p></div>`;
+
+  document.getElementById(containerId).innerHTML = html;
+
+  setTimeout(() => {
+    getOrCreateChart(`${containerId}_chart`, {
+      type:'line',
+      data: {
+        labels: xs.map(v=>v.toFixed(2)),
+        datasets: [
+          { label:fLabel, data:ys.map(v=>parseFloat(v.toFixed(6))), borderColor:'#00e5ff', backgroundColor:'rgba(0,229,255,0.05)', borderWidth:2, pointRadius:0, fill:true },
+          { label:'y = 0', data:xs.map(()=>0), borderColor:'rgba(255,255,255,0.2)', borderWidth:1, pointRadius:0, borderDash:[4,4] },
+          { label:`Raíz x*=${root.toFixed(3)}`, data:[{x:root, y:fRoot}], type:'scatter', borderColor:'#ff6b35', backgroundColor:'#ff6b35', pointRadius:10, pointStyle:'crossRot' }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{labels:{color:'#8892b0',font:{family:'Space Mono',size:10}}}, title:{display:true,text:`Gráfica de f(x) — Raíz en x*=${root.toFixed(4)}`,color:'#e8eaf6',font:{family:'Syne',size:13,weight:'700'}} },
+        scales:{ x:{type:'linear',ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}},grid:{color:'rgba(42,58,92,0.5)'}}, y:{ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}},grid:{color:'rgba(42,58,92,0.5)'}} }
+      }
+    });
+  }, 100);
+}
+
+// ── PROBLEM 1 ──────────────────────────────────────────────────
+function solveP1() {
+  const p0 = parseFloat(document.getElementById('p1_p0').value);
+  const r  = parseFloat(document.getElementById('p1_r').value)/100;
+  const q  = parseFloat(document.getElementById('p1_q').value);
+  const I  = parseFloat(document.getElementById('p1_I').value);
+  const method = document.getElementById('p1_method').value;
+  const tol = parseFloat(document.getElementById('p1_tol').value);
+  const a = parseFloat(document.getElementById('p1_a').value);
+  const b = parseFloat(document.getElementById('p1_b').value);
+  const x0 = parseFloat(document.getElementById('p1_x0').value);
+
+  const f = t => p0 * Math.exp(r * t) * q * t - I;
+  const result = runMethod(method, f, { a, b, x0, tol });
+  renderRootResult('p1_results', result,
+    'Día crítico (t*)', 'f(t) = Gasto(t) - Ingreso', 'días',
+    root => `El gasto familiar supera el ingreso en el día <strong>${root.toFixed(1)}</strong>. A partir de ese momento, la familia entra en déficit y no puede costear la canasta básica con sus ingresos actuales de Bs ${I}.`,
+    f, [1, 35]
+  );
+}
+
+// ── PROBLEM 2 ──────────────────────────────────────────────────
+function solveP2() {
+  const R0 = parseFloat(document.getElementById('p2_R0').value);
+  const D0 = parseFloat(document.getElementById('p2_D0').value);
+  const T  = parseFloat(document.getElementById('p2_T').value);
+  const Rc = parseFloat(document.getElementById('p2_Rcrit').value);
+  const al = parseFloat(document.getElementById('p2_alpha').value);
+  const method = document.getElementById('p2_method').value;
+  const tol = parseFloat(document.getElementById('p2_tol').value);
+  const a = parseFloat(document.getElementById('p2_a').value);
+  const b = parseFloat(document.getElementById('p2_b').value);
+
+  // g(Q) = R0 + Q*T - D0*(1+alpha)*T/2*T - Rc = 0
+  // More realistic: g(Q) = R0 + Q*T - integral of D0*e^(alpha*t) from 0 to T - Rc
+  const intConsumption = D0 * (Math.exp(al*T) - 1) / al;
+  const g = Q => R0 + Q * T - intConsumption - Rc;
+  const result = runMethod(method, g, { a, b, x0:a, tol });
+  renderRootResult('p2_results', result,
+    'Tasa crítica Q* (L/día)', 'g(Q) = Reservas finales - R_crítico', 'L/día',
+    root => `La planta necesita recibir al menos <strong>${root.toFixed(0)} L/día</strong> para no bajar de las reservas críticas (${Rc.toLocaleString()} L) en ${T} días. Con el consumo creciente al ${(al*100).toFixed(1)}%/día, cualquier entrada por debajo de este umbral es insuficiente.`,
+    g, [a*0.5, b*1.5]
+  );
+}
+
+// ── PROBLEM 3 ──────────────────────────────────────────────────
+function solveP3() {
+  const a = parseFloat(document.getElementById('p3_a').value);
+  const b = parseFloat(document.getElementById('p3_b').value);
+  const c = parseFloat(document.getElementById('p3_c').value);
+  const d = parseFloat(document.getElementById('p3_d').value);
+  const method = document.getElementById('p3_method').value;
+  const tol = parseFloat(document.getElementById('p3_tol').value);
+  const a2 = parseFloat(document.getElementById('p3_a2').value);
+  const b2 = parseFloat(document.getElementById('p3_b2').value);
+
+  const h = x => a*x*x*x - b*x*x + c*x - d;
+  const result = runMethod(method, h, { a:a2, b:b2, x0:b2, tol });
+  renderRootResult('p3_results', result,
+    'Nivel de malestar x*', 'h(x) = tensión social', 'uds.',
+    root => `El nivel de descontento alcanza el umbral crítico en <strong>x* = ${root.toFixed(4)}</strong>. Por encima de este valor, el modelo predice transición de tensión latente a manifestación masiva. Los parámetros institucionales (coef. c y d) son los más influyentes en desplazar este umbral.`,
+    h, [0, b2*1.5]
+  );
+}
+</script>
+</body>
+</html>

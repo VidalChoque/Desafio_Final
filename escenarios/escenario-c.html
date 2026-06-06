@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario C — Precios · Métodos Numéricos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">⬡ Escenario C</div>
+    <h1>Curva Continua de Precios<br>de Alimentos Básicos</h1>
+    <p>Reconstrucción de la curva de precios de productos básicos (papa, arroz, aceite) mediante interpolación sobre datos dispersos recogidos durante la crisis de abastecimiento.</p>
+  </div>
+
+  <!-- CONTEXT -->
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situación Bolivia:</strong> Los mercados reportan precios distintos cada día, con datos faltantes durante bloqueos. La interpolación permite reconstruir la curva completa de precios para estimar el costo en días sin dato y proyectar tendencias.
+      </div>
+      <p>Dado un conjunto de pares (día, precio), los métodos de interpolación construyen un polinomio o función que pasa exactamente por todos los puntos conocidos.</p>
+    </div>
+  </div>
+
+  <!-- DATA INPUT -->
+  <div class="section">
+    <div class="section-header"><h2>Datos de Precios</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Producto</label>
+          <select id="producto" onchange="loadProductPreset()">
+            <option value="papa">Papa (Bs/kg)</option>
+            <option value="arroz">Arroz (Bs/kg)</option>
+            <option value="aceite">Aceite (Bs/L)</option>
+            <option value="pollo">Pollo (Bs/kg)</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Método de interpolación</label>
+          <select id="interpMethod">
+            <option value="lagrange">Lagrange</option>
+            <option value="newton">Newton (diferencias divididas)</option>
+            <option value="spline">Splines Cúbicos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Día a estimar</label>
+          <input type="number" id="xEstimate" value="7" step="1" min="1">
+        </div>
+      </div>
+
+      <p style="color:var(--text-dim);font-size:12px;margin-bottom:8px">Pares (día, precio) — uno por línea, separados por coma:</p>
+      <div class="form-group">
+        <label>Datos conocidos</label>
+        <textarea id="dataInput" rows="8">1,8
+5,10
+10,13
+15,16
+20,19
+30,22</textarea>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="interpolate()">▶ Interpolar</button>
+        <button class="btn btn-secondary" onclick="compareAll()">⚖ Comparar los 3 métodos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results"></div>
+
+  <!-- QUESTIONS -->
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>1. Cual era el precio en un dia sin dato?</h4>
+          <p class="sub">La interpolacion estima el precio del producto en el dia solicitado usando los datos conocidos. El valor calculado rellena los vacios provocados por reportes incompletos.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>2. Como cambia la tendencia de precios?</h4>
+          <p class="sub">La curva interpolada muestra si el precio sube de forma suave, acelerada o irregular. La pendiente permite interpretar presion de escasez en el mercado.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>3. Que metodo representa mejor los datos?</h4>
+          <p class="sub">Lagrange y Newton pasan por todos los puntos, pero pueden oscilar con muchos datos. Los splines cubicos suelen ser mas realistas para precios porque suavizan la curva por intervalos.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>4. Donde no se debe extrapolar?</h4>
+          <p class="sub">Las estimaciones mas confiables estan dentro del rango de dias observados. Fuera de ese intervalo el modelo extrapola y la incertidumbre aumenta rapidamente.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY -->
+  <div class="section">
+    <div class="section-header"><h2>Algoritmos de Interpolación</h2><span class="badge">TEORÍA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tc-lag">Lagrange</button>
+        <button class="tab-btn" data-tab="tc-new">Newton</button>
+        <button class="tab-btn" data-tab="tc-spl">Splines</button>
+      </div>
+      <div id="tc-lag" class="tab-panel active">
+        <div class="formula">P(x) = Σᵢ yᵢ · Lᵢ(x)<br>Lᵢ(x) = Π(x−xⱼ)/(xᵢ−xⱼ)  j≠i</div>
+        <p>El polinomio de Lagrange pasa exactamente por todos los puntos. Para muchos datos dispersos puede presentar oscilaciones (efecto Runge). Adecuado para pocos puntos de precios bien distribuidos.</p>
+      </div>
+      <div id="tc-new" class="tab-panel">
+        <div class="formula">P(x) = f[x₀] + f[x₀,x₁](x−x₀) + f[x₀,x₁,x₂](x−x₀)(x−x₁) + …</div>
+        <p>Newton usa diferencias divididas, lo que permite añadir puntos nuevos sin recalcular todo. Ideal para datos que llegan progresivamente (precios reportados día a día). Matemáticamente equivalente a Lagrange pero computacionalmente más eficiente.</p>
+      </div>
+      <div id="tc-spl" class="tab-panel">
+        <div class="formula">S_i(x) = aᵢ + bᵢ(x−xᵢ) + cᵢ(x−xᵢ)² + dᵢ(x−xᵢ)³</div>
+        <p>Los Splines cúbicos usan un polinomio cúbico distinto en cada intervalo, garantizando continuidad de primera y segunda derivada. Evitan las oscilaciones de Lagrange/Newton para muchos puntos. Son el método preferido para curvas de precios suaves y realistas.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Desafío Final de <strong>Métodos Numéricos</strong> · Escenario C · Interpolación</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('c');
+initTabs();
+
+const presets = {
+  papa:  [[1,8],[5,10],[10,13],[15,16],[20,19],[30,22]],
+  arroz: [[1,6],[7,6.5],[14,7.5],[21,9],[28,11],[30,12.5]],
+  aceite:[[1,18],[5,19],[12,22],[18,25],[25,28],[30,31]],
+  pollo: [[1,20],[4,20],[10,22],[15,25],[22,28],[30,35]],
+};
+
+function loadProductPreset() {
+  const p = document.getElementById('producto').value;
+  if (presets[p]) {
+    document.getElementById('dataInput').value = presets[p].map(r=>r.join(',')).join('\n');
+  }
+}
+
+function parseData() {
+  return document.getElementById('dataInput').value.trim().split('\n').map(line => {
+    const [x, y] = line.split(',').map(v => parseFloat(v.trim()));
+    return { x, y };
+  }).filter(p => !isNaN(p.x) && !isNaN(p.y)).sort((a,b)=>a.x-b.x);
+}
+
+// ── LAGRANGE ───────────────────────────────────────────────────
+function lagrangeInterp(pts, x) {
+  const n = pts.length;
+  let result = 0;
+  for (let i = 0; i < n; i++) {
+    let L = 1;
+    for (let j = 0; j < n; j++) {
+      if (j !== i) L *= (x - pts[j].x) / (pts[i].x - pts[j].x);
+    }
+    result += pts[i].y * L;
+  }
+  return result;
+}
+
+// ── NEWTON divided differences ─────────────────────────────────
+function newtonDivDiff(pts) {
+  const n = pts.length;
+  const table = pts.map(p => [p.y]);
+  for (let j = 1; j < n; j++) {
+    for (let i = 0; i < n - j; i++) {
+      const v = (table[i+1][j-1] - table[i][j-1]) / (pts[i+j].x - pts[i].x);
+      table[i].push(v);
+    }
+  }
+  return table[0]; // coefficients
+}
+
+function newtonEval(coeffs, pts, x) {
+  let result = coeffs[0];
+  let prod = 1;
+  for (let i = 1; i < coeffs.length; i++) {
+    prod *= (x - pts[i-1].x);
+    result += coeffs[i] * prod;
+  }
+  return result;
+}
+
+// ── NATURAL CUBIC SPLINE ───────────────────────────────────────
+function cubicSpline(pts) {
+  const n = pts.length;
+  const h = [], alpha = [], l = [], mu = [], z = [], c = [], b = [], d = [];
+  for (let i = 0; i < n-1; i++) h.push(pts[i+1].x - pts[i].x);
+  for (let i = 1; i < n-1; i++)
+    alpha.push(3/h[i]*(pts[i+1].y-pts[i].y) - 3/h[i-1]*(pts[i].y-pts[i-1].y));
+
+  l[0] = 1; mu[0] = 0; z[0] = 0;
+  for (let i = 1; i < n-1; i++) {
+    l[i] = 2*(pts[i+1].x-pts[i-1].x) - h[i-1]*mu[i-1];
+    mu[i] = h[i]/l[i];
+    z[i] = (alpha[i-1] - h[i-1]*z[i-1]) / l[i];
+  }
+  l[n-1] = 1; z[n-1] = 0; c[n-1] = 0;
+  for (let j = n-2; j >= 0; j--) {
+    c[j] = z[j] - mu[j]*c[j+1];
+    b[j] = (pts[j+1].y-pts[j].y)/h[j] - h[j]*(c[j+1]+2*c[j])/3;
+    d[j] = (c[j+1]-c[j])/(3*h[j]);
+  }
+  return { a: pts.map(p=>p.y), b, c, d };
+}
+
+function splineEval(pts, coeff, x) {
+  const n = pts.length;
+  let i = 0;
+  for (let j = 0; j < n-2; j++) if (x >= pts[j].x) i = j;
+  const dx = x - pts[i].x;
+  return coeff.a[i] + coeff.b[i]*dx + coeff.c[i]*dx*dx + coeff.d[i]*dx*dx*dx;
+}
+
+function evalMethod(method, pts, x) {
+  if (method === 'lagrange') return lagrangeInterp(pts, x);
+  if (method === 'newton') {
+    const c = newtonDivDiff(pts);
+    return newtonEval(c, pts, x);
+  }
+  if (method === 'spline') {
+    const sp = cubicSpline(pts);
+    return splineEval(pts, sp, x);
+  }
+}
+
+function generateCurve(method, pts, nPoints = 200) {
+  const x0 = pts[0].x, xN = pts[pts.length-1].x;
+  const xs = [], ys = [];
+  let spCoeff = null;
+  let newtonC = null;
+  if (method === 'spline') spCoeff = cubicSpline(pts);
+  if (method === 'newton') newtonC = newtonDivDiff(pts);
+
+  for (let i = 0; i <= nPoints; i++) {
+    const x = x0 + (xN - x0) * i / nPoints;
+    let y;
+    if (method === 'lagrange') y = lagrangeInterp(pts, x);
+    else if (method === 'newton') y = newtonEval(newtonC, pts, x);
+    else y = splineEval(pts, spCoeff, x);
+    xs.push(parseFloat(x.toFixed(2)));
+    ys.push(parseFloat(y.toFixed(4)));
+  }
+  return { xs, ys };
+}
+
+function interpolate() {
+  const pts = parseData();
+  if (pts.length < 3) { alert('Ingresa al menos 3 puntos'); return; }
+  const method = document.getElementById('interpMethod').value;
+  const xEst = parseFloat(document.getElementById('xEstimate').value);
+  const producto = document.getElementById('producto').value;
+
+  const yEst = evalMethod(method, pts, xEst);
+  const curve = generateCurve(method, pts);
+
+  const priceIncrease = ((pts[pts.length-1].y - pts[0].y) / pts[0].y * 100).toFixed(1);
+  const maxPrice = Math.max(...pts.map(p=>p.y));
+  const minPrice = Math.min(...pts.map(p=>p.y));
+
+  const methodNames = { lagrange:'Lagrange', newton:'Newton', spline:'Splines Cúbicos' };
+
+  let html = `
+    <div class="section">
+      <div class="section-header"><h2>Interpolación — ${methodNames[method]}</h2><span class="badge">${pts.length} DATOS</span></div>
+      <div class="section-body">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-value">Bs ${yEst.toFixed(2)}</div>
+            <div class="result-label">Precio estimado día ${xEst}</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--red)">+${priceIncrease}%</div>
+            <div class="result-label">Incremento total</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--yellow)">Bs ${maxPrice.toFixed(2)}</div>
+            <div class="result-label">Precio máximo</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--green)">Bs ${minPrice.toFixed(2)}</div>
+            <div class="result-label">Precio mínimo</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap" style="height:350px"><canvas id="chartC_main"></canvas></div>`;
+
+  // Newton divided differences table
+  if (method === 'newton') {
+    const coeffs = newtonDivDiff(pts);
+    const headers = ['Nodo', 'x', 'f[·]', 'Coef. Newton'];
+    const rows = pts.map((p,i) => [i, p.x, p.y.toFixed(4), coeffs[i].toFixed(6)]);
+    html += `<h4 style="color:var(--accent);font-size:13px;margin-top:16px;margin-bottom:8px">Tabla de Diferencias Divididas</h4>`;
+    html += buildTable(headers, rows);
+  }
+
+  // Lagrange basis polynomials info
+  if (method === 'lagrange') {
+    html += `<div class="info-box" style="margin-top:12px">
+      <strong>Polinomio de Lagrange grado ${pts.length-1}:</strong> Se construyeron ${pts.length} polinomios base Lᵢ(x).
+      El grado ${pts.length-1} puede generar oscilaciones (efecto Runge) si los puntos son desiguales.
+      Para ${pts.length} puntos, ${pts.length > 6 ? 'considera usar Splines para mayor suavidad.' : 'el polinomio es manejable.'}
+    </div>`;
+  }
+
+  if (method === 'spline') {
+    const sp = cubicSpline(pts);
+    const headers = ['Intervalo','a (cte)','b (lin)','c (cuad)','d (cúb)'];
+    const rows = pts.slice(0,-1).map((p,i) => [
+      `[${p.x}, ${pts[i+1].x}]`,
+      sp.a[i].toFixed(4), sp.b[i]?.toFixed(4)||'—',
+      sp.c[i]?.toFixed(6)||'—', sp.d[i]?.toFixed(6)||'—'
+    ]);
+    html += `<h4 style="color:var(--accent);font-size:13px;margin-top:16px;margin-bottom:8px">Coeficientes del Spline por Tramo</h4>`;
+    html += buildTable(headers, rows);
+  }
+
+  html += `
+    <div class="interpretation">
+      <h4>📊 Interpretación</h4>
+      <p>El precio de <strong>${producto === 'custom' ? 'el producto' : producto}</strong> en el día <strong>${xEst}</strong> se estima en <strong>Bs ${yEst.toFixed(2)}</strong> mediante ${methodNames[method]}.
+      El incremento total del ${priceIncrease}% en ${pts[pts.length-1].x - pts[0].x} días refleja el impacto de la crisis de abastecimiento.
+      ${method === 'spline' ? 'Los Splines cúbicos garantizan una curva suave y realista, sin oscilaciones artificiales entre puntos.' : ''}
+      ${method === 'newton' ? 'El método de Newton permite añadir nuevos datos de precios sin recalcular toda la interpolación.' : ''}
+      ${method === 'lagrange' && pts.length > 7 ? '⚠ Con muchos puntos, Lagrange puede mostrar oscilaciones; considera Splines.' : ''}
+      </p>
+    </div>`;
+  html += '</div></div>';
+
+  showResult('results', html);
+
+  setTimeout(() => {
+    getOrCreateChart('chartC_main', {
+      type: 'line',
+      data: {
+        labels: curve.xs,
+        datasets: [
+          {
+            label: `Curva interpolada (${methodNames[method]})`,
+            data: curve.ys,
+            borderColor: '#00e5ff', backgroundColor: 'rgba(0,229,255,0.05)',
+            borderWidth: 2.5, pointRadius: 0, fill: true
+          },
+          {
+            label: 'Datos conocidos',
+            data: pts.map(p=>({ x: p.x, y: p.y })),
+            type: 'scatter',
+            borderColor: '#ff6b35', backgroundColor: '#ff6b35',
+            pointRadius: 7, pointHoverRadius: 9
+          },
+          {
+            label: `Estimación día ${xEst} (Bs ${yEst.toFixed(2)})`,
+            data: [{ x: xEst, y: yEst }],
+            type: 'scatter',
+            borderColor: '#ffd60a', backgroundColor: '#ffd60a',
+            pointRadius: 10, pointStyle: 'star'
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#8892b0', font: { family:'Space Mono', size:10 } } },
+          title: { display: true, text: `Curva de Precios: ${producto.charAt(0).toUpperCase()+producto.slice(1)}`, color:'#e8eaf6', font:{family:'Syne',size:14,weight:'700'} }
+        },
+        scales: {
+          x: { type:'linear', ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(42,58,92,0.5)'}, title:{display:true,text:'Días',color:'#8892b0'} },
+          y: { ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(42,58,92,0.5)'}, title:{display:true,text:'Precio (Bs)',color:'#8892b0'} }
+        }
+      }
+    });
+  }, 100);
+}
+
+function compareAll() {
+  const pts = parseData();
+  if (pts.length < 3) { alert('Ingresa al menos 3 puntos'); return; }
+  const xEst = parseFloat(document.getElementById('xEstimate').value);
+  const methods = ['lagrange','newton','spline'];
+  const names = ['Lagrange','Newton','Splines Cúbicos'];
+  const colors = ['#00e5ff','#00ff9d','#ff6b35'];
+
+  const estimates = methods.map(m => evalMethod(m, pts, xEst));
+  const curves = methods.map(m => generateCurve(m, pts));
+
+  let html = `
+    <div class="section">
+      <div class="section-header"><h2>Comparación de los 3 Métodos</h2><span class="badge">DÍA ${xEst}</span></div>
+      <div class="section-body">
+        <div class="comparison-grid">`;
+
+  methods.forEach((m,i) => {
+    html += `<div class="comparison-card">
+      <h4>${names[i]}</h4>
+      <div class="val" style="color:${colors[i]}">Bs ${estimates[i].toFixed(4)}</div>
+      <div class="sub">Estimación día ${xEst}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  const spread = Math.max(...estimates) - Math.min(...estimates);
+  html += `<div class="info-box" style="margin-top:16px">
+    <strong>Diferencia entre métodos:</strong> Bs ${spread.toFixed(4)} — ${spread < 0.1 ? 'Los tres métodos son consistentes para estos datos.' : 'Existe variación notable. Los Splines son más confiables para datos con tendencia suave.'}
+  </div>`;
+
+  html += `<div class="chart-wrap" style="height:350px"><canvas id="chartC_comp"></canvas></div>`;
+  html += `<div class="interpretation"><h4>📊 Interpretación de la Comparación</h4>
+    <p>Lagrange y Newton producen el mismo polinomio (matemáticamente equivalentes) pero pueden diferir en la estimación por precisión numérica con datos dispersos. Los Splines cúbicos producen una curva más suave y confiable cuando los precios crecen monotónicamente. Para datos de precios con pocos saltos bruscos, los tres métodos convergen. Con muchos puntos o datos irregulares, los Splines son la mejor opción.</p></div>`;
+  html += '</div></div>';
+
+  showResult('results', html);
+
+  setTimeout(() => {
+    getOrCreateChart('chartC_comp', {
+      type: 'line',
+      data: {
+        labels: curves[0].xs,
+        datasets: [
+          ...methods.map((m,i) => ({
+            label: names[i],
+            data: curves[i].ys,
+            borderColor: colors[i], backgroundColor:'transparent',
+            borderWidth: 2, pointRadius: 0,
+            borderDash: i===1 ? [6,3] : i===2 ? [2,2] : []
+          })),
+          { label:'Datos', data:pts.map(p=>({x:p.x,y:p.y})), type:'scatter', borderColor:'#fff', backgroundColor:'#fff', pointRadius:5 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{labels:{color:'#8892b0',font:{family:'Space Mono',size:10}}}, title:{display:true,text:'Comparación de Métodos de Interpolación',color:'#e8eaf6',font:{family:'Syne',size:14,weight:'700'}} },
+        scales: { x:{type:'linear',ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}},grid:{color:'rgba(42,58,92,0.5)'}}, y:{ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}},grid:{color:'rgba(42,58,92,0.5)'}} }
+      }
+    });
+  }, 100);
+}
+
+interpolate();
+</script>
+</body>
+</html>

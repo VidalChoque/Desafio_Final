@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario A — Abastecimiento · Métodos Numéricos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">⬡ Escenario A</div>
+    <h1>Optimización del Abastecimiento<br>y Red de Transporte</h1>
+    <p>Se simula la distribución de carburantes y alimentos desde plantas de acopio hacia zonas de la ciudad, considerando restricciones de bloqueos y capacidad de rutas. Se utiliza un sistema de ecuaciones lineales resuelto con múltiples métodos iterativos.</p>
+  </div>
+
+  <!-- CONTEXT -->
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situación Bolivia:</strong> Con los bloqueos en carreteras y la escasez de carburantes, las plantas distribuidoras deben optimizar cuánto enviar a cada zona (Norte, Centro, Sur) desde sus depósitos. El modelo matemático permite calcular la distribución óptima y analizar qué ocurre cuando una ruta queda inhabilitada.
+      </div>
+      <p>El sistema de ecuaciones representa restricciones de oferta, demanda y capacidad:</p>
+      <div class="formula">
+        Planta 1 → [x₁, x₂, x₃] → [Zona Norte, Zona Centro, Zona Sur]<br>
+        Planta 2 → [x₄, x₅, x₆]<br>
+        Planta 3 → [x₇, x₈, x₉]<br><br>
+        Ax = b  →  donde A es la matriz de coeficientes, x el vector solución
+      </div>
+    </div>
+  </div>
+
+  <!-- MATRIX INPUT -->
+  <div class="section">
+    <div class="section-header"><h2>Ingreso de Datos del Sistema</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label>Tamaño del sistema (n×n)</label>
+          <select id="sysSize" onchange="buildMatrixUI()">
+            <option value="3" selected>3×3 (3 plantas, 3 zonas)</option>
+            <option value="4">4×4</option>
+            <option value="5">5×5</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Método de resolución</label>
+          <select id="method">
+            <option value="jacobi">Jacobi</option>
+            <option value="gauss-seidel">Gauss-Seidel</option>
+            <option value="sor">SOR</option>
+            <option value="lu">Factorización LU</option>
+            <option value="conjugado">Gradiente Conjugado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="form-group">
+          <label>Tolerancia</label>
+          <input type="number" id="tol" value="0.0001" step="0.00001">
+        </div>
+        <div class="form-group">
+          <label>Máx. iteraciones</label>
+          <input type="number" id="maxIter" value="100">
+        </div>
+        <div class="form-group" id="sorOmegaGroup" style="display:none">
+          <label>ω (SOR)</label>
+          <input type="number" id="sorOmega" value="1.25" step="0.05" min="0.1" max="1.99">
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top:8px">
+        <strong>Sistema por defecto:</strong> Distribución de combustible en litros/día. Edita los valores de la matriz A y el vector b.
+      </div>
+
+      <div style="overflow-x:auto">
+        <div id="matrixContainer"></div>
+      </div>
+
+      <div class="btn-group" style="margin-top:20px">
+        <button class="btn btn-primary" onclick="solve()">▶ Resolver Sistema</button>
+        <button class="btn btn-secondary" onclick="loadDefault()">↺ Cargar Ejemplo Bolivia</button>
+        <button class="btn btn-secondary" onclick="loadBlocked()">⛔ Simular Bloqueo de Ruta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results"></div>
+
+  <!-- QUESTIONS -->
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>1. Cuanto debe enviarse a cada zona?</h4>
+          <p class="sub">La solucion del sistema Ax=b entrega la asignacion por zona. En la simulacion, cada valor x representa litros por dia que deben dirigirse a Norte, Centro, Sur u otras zonas activadas.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>2. Que pasa si una ruta queda bloqueada?</h4>
+          <p class="sub">Al modificar la matriz A o el vector b, el sistema redistribuye la carga. Una zona puede recibir menos abastecimiento y otra absorber mayor demanda, mostrando el impacto directo del bloqueo.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>3. Que metodo conviene usar?</h4>
+          <p class="sub">LU da una solucion directa; Jacobi, Gauss-Seidel, SOR y Gradiente Conjugado permiten comparar convergencia. Si la matriz es diagonalmente dominante, los metodos iterativos son confiables.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>4. Como se valida la respuesta?</h4>
+          <p class="sub">Se revisa el residuo maximo |b-Ax|, el numero de iteraciones y la dominancia diagonal. Un residuo cercano a cero indica que la distribucion calculada satisface las restricciones.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPLANATION -->
+  <div class="section">
+    <div class="section-header"><h2>Algoritmos Implementados</h2><span class="badge">TEORÍA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-jacobi">Jacobi</button>
+        <button class="tab-btn" data-tab="tab-gs">Gauss-Seidel</button>
+        <button class="tab-btn" data-tab="tab-sor">SOR</button>
+        <button class="tab-btn" data-tab="tab-lu">LU</button>
+        <button class="tab-btn" data-tab="tab-cg">Grad. Conjugado</button>
+      </div>
+
+      <div id="tab-jacobi" class="tab-panel active">
+        <div class="formula">x_i^(k+1) = (b_i - Σ a_ij · x_j^(k)) / a_ii  (j ≠ i)</div>
+        <p>El método de Jacobi actualiza todas las variables simultáneamente usando los valores de la iteración anterior. Requiere que la matriz sea diagonalmente dominante para converger. Ideal para sistemas donde cada zona se abastece independientemente.</p>
+      </div>
+      <div id="tab-gs" class="tab-panel">
+        <div class="formula">x_i^(k+1) = (b_i - Σ a_ij·x_j^(k+1) [j&lt;i] - Σ a_ij·x_j^(k) [j>i]) / a_ii</div>
+        <p>Gauss-Seidel usa valores actualizados inmediatamente. Converge más rápido que Jacobi para sistemas bien condicionados. Modela mejor la realidad: al redistribuir a zona Norte, ese dato ya se usa para calcular Zona Centro.</p>
+      </div>
+      <div id="tab-sor" class="tab-panel">
+        <div class="formula">x_i^(k+1) = (1-ω)·x_i^(k) + ω·x_GS^(k+1)</div>
+        <p>SOR (Successive Over-Relaxation) acelera Gauss-Seidel con un factor ω. Con ω=1 es Gauss-Seidel. Para ω∈(1,2) hay sobre-relajación (más rápido). Para sistemas con bloqueos parciales, SOR permite ajustar la velocidad de convergencia.</p>
+      </div>
+      <div id="tab-lu" class="tab-panel">
+        <div class="formula">A = L·U  →  L·y = b  →  U·x = y</div>
+        <p>La factorización LU descompone A en triangular inferior L y superior U. Exacto para sistemas de tamaño moderado. Útil cuando se resuelven múltiples escenarios con la misma matriz A (distintos vectores b: demanda normal vs emergencia).</p>
+      </div>
+      <div id="tab-cg" class="tab-panel">
+        <div class="formula">x^(k+1) = x^(k) + α_k·d^(k)<br>α_k = (r^T·r) / (d^T·A·d)</div>
+        <p>El Gradiente Conjugado minimiza el residuo en el espacio de Krylov. Eficiente para sistemas grandes y simétricos definidos positivos. Útil en redes de distribución extensas con muchas rutas.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Desafío Final de <strong>Métodos Numéricos</strong> · Escenario A · Sistemas de Ecuaciones Lineales</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('a');
+initTabs();
+
+// Show/hide omega for SOR
+document.getElementById('method').addEventListener('change', function() {
+  document.getElementById('sorOmegaGroup').style.display = this.value === 'sor' ? 'flex' : 'none';
+});
+
+let n = 3;
+
+function buildMatrixUI() {
+  n = parseInt(document.getElementById('sysSize').value);
+  const cont = document.getElementById('matrixContainer');
+
+  let html = '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:12px">';
+  // Matrix A
+  html += '<div><p style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Matriz A (coeficientes)</p>';
+  html += `<div class="matrix-inputs" style="grid-template-columns:repeat(${n},1fr)">`;
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      html += `<input type="number" id="a${i}${j}" value="${i===j?4:0}" step="0.1">`;
+  html += '</div></div>';
+
+  // Vector b
+  html += '<div><p style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">Vector b (demanda/restricción)</p>';
+  html += `<div class="matrix-inputs" style="grid-template-columns:1fr">`;
+  for (let i = 0; i < n; i++)
+    html += `<input type="number" id="b${i}" value="${(i+1)*100}" step="1">`;
+  html += '</div></div>';
+
+  // x0
+  html += '<div><p style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">x₀ inicial</p>';
+  html += `<div class="matrix-inputs" style="grid-template-columns:1fr">`;
+  for (let i = 0; i < n; i++)
+    html += `<input type="number" id="x0${i}" value="0" step="1">`;
+  html += '</div></div>';
+
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+function loadDefault() {
+  document.getElementById('sysSize').value = 3; n = 3;
+  buildMatrixUI();
+  // Diagonal dominant system: distribution network
+  const A = [[8,-1,-1],[-1,7,-2],[-2,-1,9]];
+  const b = [400, 350, 450];
+  A.forEach((row,i) => row.forEach((v,j) => { document.getElementById(`a${i}${j}`).value = v; }));
+  b.forEach((v,i) => { document.getElementById(`b${i}`).value = v; });
+}
+
+function loadBlocked() {
+  loadDefault();
+  // Block route: Planta2 → ZonaNorte → set to 0 constraint
+  document.getElementById('a10').value = 0;
+  document.getElementById('b0').value = 300; // demand drops
+  document.getElementById('b1').value = 500; // center absorbs more
+  const w = document.getElementById('results');
+  if(w) w.innerHTML = '<div class="warn-box"><strong>⛔ Ruta bloqueada:</strong> Se redujo la capacidad de Planta2 hacia Zona Norte. La demanda se redistribuye hacia Zona Centro. Presiona Resolver para ver el impacto.</div>';
+}
+
+function getMatrix() {
+  const A = [], b = [], x0 = [];
+  for (let i = 0; i < n; i++) {
+    A.push([]);
+    for (let j = 0; j < n; j++) A[i].push(parseFloat(document.getElementById(`a${i}${j}`).value) || 0);
+    b.push(parseFloat(document.getElementById(`b${i}`).value) || 0);
+    x0.push(parseFloat(document.getElementById(`x0${i}`).value) || 0);
+  }
+  return { A, b, x0 };
+}
+
+// ── JACOBI ──────────────────────────────────────────────────────
+function jacobi(A, b, x0, tol, maxIter) {
+  let x = [...x0], iters = [];
+  for (let k = 0; k < maxIter; k++) {
+    let xNew = new Array(n).fill(0), maxErr = 0;
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) if (j !== i) sum += A[i][j] * x[j];
+      xNew[i] = (b[i] - sum) / A[i][i];
+    }
+    for (let i = 0; i < n; i++) maxErr = Math.max(maxErr, Math.abs(xNew[i] - x[i]));
+    iters.push({ k: k+1, x: [...xNew], err: maxErr });
+    x = xNew;
+    if (maxErr < tol) break;
+  }
+  return { x, iters };
+}
+
+// ── GAUSS-SEIDEL ────────────────────────────────────────────────
+function gaussSeidel(A, b, x0, tol, maxIter) {
+  let x = [...x0], iters = [];
+  for (let k = 0; k < maxIter; k++) {
+    let xOld = [...x], maxErr = 0;
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) if (j !== i) sum += A[i][j] * x[j];
+      x[i] = (b[i] - sum) / A[i][i];
+    }
+    for (let i = 0; i < n; i++) maxErr = Math.max(maxErr, Math.abs(x[i] - xOld[i]));
+    iters.push({ k: k+1, x: [...x], err: maxErr });
+    if (maxErr < tol) break;
+  }
+  return { x, iters };
+}
+
+// ── SOR ─────────────────────────────────────────────────────────
+function sor(A, b, x0, tol, maxIter, omega) {
+  let x = [...x0], iters = [];
+  for (let k = 0; k < maxIter; k++) {
+    let xOld = [...x], maxErr = 0;
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) if (j !== i) sum += A[i][j] * x[j];
+      const xGs = (b[i] - sum) / A[i][i];
+      x[i] = (1 - omega) * x[i] + omega * xGs;
+    }
+    for (let i = 0; i < n; i++) maxErr = Math.max(maxErr, Math.abs(x[i] - xOld[i]));
+    iters.push({ k: k+1, x: [...x], err: maxErr });
+    if (maxErr < tol) break;
+  }
+  return { x, iters };
+}
+
+// ── LU ──────────────────────────────────────────────────────────
+function lu(A, b) {
+  const n = A.length;
+  const L = Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) => i===j?1:0));
+  const U = A.map(r => [...r]);
+  for (let k = 0; k < n; k++) {
+    for (let i = k+1; i < n; i++) {
+      L[i][k] = U[i][k] / U[k][k];
+      for (let j = k; j < n; j++) U[i][j] -= L[i][k] * U[k][j];
+    }
+  }
+  // Forward: Ly = b
+  const y = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    let s = b[i];
+    for (let j = 0; j < i; j++) s -= L[i][j] * y[j];
+    y[i] = s;
+  }
+  // Back: Ux = y
+  const x = new Array(n).fill(0);
+  for (let i = n-1; i >= 0; i--) {
+    let s = y[i];
+    for (let j = i+1; j < n; j++) s -= U[i][j] * x[j];
+    x[i] = s / U[i][i];
+  }
+  return { x, L, U, iters: [{ k:1, x:[...x], err:0 }] };
+}
+
+// ── CONJUGATE GRADIENT ──────────────────────────────────────────
+function conjugateGradient(A, b, x0, tol, maxIter) {
+  let x = [...x0];
+  let r = b.map((bi,i) => bi - A[i].reduce((s,a,j) => s+a*x[j], 0));
+  let d = [...r];
+  let iters = [];
+  for (let k = 0; k < maxIter; k++) {
+    const Ad = A.map(row => row.reduce((s,a,j) => s+a*d[j], 0));
+    const rr = r.reduce((s,ri) => s+ri*ri, 0);
+    const dAd = d.reduce((s,di,i) => s+di*Ad[i], 0);
+    if (Math.abs(dAd) < 1e-14) break;
+    const alpha = rr / dAd;
+    x = x.map((xi,i) => xi + alpha * d[i]);
+    const rNew = r.map((ri,i) => ri - alpha * Ad[i]);
+    const rrNew = rNew.reduce((s,ri) => s+ri*ri, 0);
+    const beta = rrNew / rr;
+    d = rNew.map((ri,i) => ri + beta * d[i]);
+    r = rNew;
+    const err = Math.sqrt(rrNew);
+    iters.push({ k:k+1, x:[...x], err });
+    if (err < tol) break;
+  }
+  return { x, iters };
+}
+
+// ── RESIDUAL ────────────────────────────────────────────────────
+function residual(A, b, x) {
+  return b.map((bi,i) => Math.abs(bi - A[i].reduce((s,a,j) => s+a*x[j], 0)));
+}
+
+function conditionNumber(A) {
+  // Simple estimate: ||A||_inf * ||A^-1||_inf via norm
+  const norm = A.map(r => r.reduce((s,a) => s+Math.abs(a),0));
+  return Math.max(...norm);
+}
+
+function solve() {
+  const { A, b, x0 } = getMatrix();
+  const tol = parseFloat(document.getElementById('tol').value) || 0.0001;
+  const maxIter = parseInt(document.getElementById('maxIter').value) || 100;
+  const method = document.getElementById('method').value;
+  const omega = parseFloat(document.getElementById('sorOmega').value) || 1.25;
+
+  // Check diagonal dominance
+  let dominant = true;
+  for (let i = 0; i < n; i++) {
+    const diag = Math.abs(A[i][i]);
+    const offSum = A[i].reduce((s,a,j) => j!==i ? s+Math.abs(a) : s, 0);
+    if (diag < offSum) { dominant = false; }
+  }
+
+  let result;
+  try {
+    switch(method) {
+      case 'jacobi': result = jacobi(A, b, x0, tol, maxIter); break;
+      case 'gauss-seidel': result = gaussSeidel(A, b, x0, tol, maxIter); break;
+      case 'sor': result = sor(A, b, x0, tol, maxIter, omega); break;
+      case 'lu': result = lu(A, b); break;
+      case 'conjugado': result = conjugateGradient(A, b, x0, tol, maxIter); break;
+    }
+  } catch(e) {
+    showResult('results', `<div class="result-box error"><p>Error: ${e.message}</p></div>`);
+    return;
+  }
+
+  const { x, iters } = result;
+  const res = residual(A, b, x);
+  const maxRes = Math.max(...res);
+  const zones = ['Zona Norte','Zona Centro','Zona Sur','Zona Este','Zona Oeste'].slice(0, n);
+
+  const methodLabels = {
+    'jacobi': 'Jacobi', 'gauss-seidel': 'Gauss-Seidel', 'sor': `SOR (ω=${omega})`,
+    'lu': 'Factorización LU', 'conjugado': 'Gradiente Conjugado'
+  };
+
+  let html = `
+    <div class="section">
+      <div class="section-header"><h2>Resultados — ${methodLabels[method]}</h2><span class="badge">${iters.length} ITER.</span></div>
+      <div class="section-body">`;
+
+  if (!dominant && method !== 'lu') {
+    html += `<div class="warn-box"><strong>⚠ Advertencia:</strong> La matriz no es estrictamente diagonal dominante. El método iterativo puede no converger. Considera usar LU para este sistema.</div>`;
+  }
+
+  html += `<div class="result-grid">`;
+  x.forEach((xi, i) => {
+    html += `<div class="result-item">
+      <div class="result-value">${xi.toFixed(1)}<span style="font-size:14px"> L/día</span></div>
+      <div class="result-label">${zones[i]}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Residuals
+  html += `<div class="result-grid" style="margin-top:12px">`;
+  html += `<div class="result-item"><div class="result-value" style="color:var(--green)">${maxRes.toExponential(2)}</div><div class="result-label">Residuo máx.</div></div>`;
+  html += `<div class="result-item"><div class="result-value" style="color:var(--yellow)">${iters.length}</div><div class="result-label">Iteraciones</div></div>`;
+  html += `<div class="result-item"><div class="result-value" style="color:${dominant?'var(--green)':'var(--red)'}">${dominant ? 'Sí' : 'No'}</div><div class="result-label">Dom. diagonal</div></div>`;
+  html += `</div>`;
+
+  // Table of last 10 iterations
+  if (iters.length > 0 && method !== 'lu') {
+    const show = iters.slice(-Math.min(10, iters.length));
+    const headers = ['Iter.', ...zones.map((_,i)=>`x${i+1}`), 'Error'];
+    const rows = show.map(it => [it.k, ...it.x.map(v=>v.toFixed(4)), it.err.toExponential(3)]);
+    html += buildTable(headers, rows);
+  } else if (method === 'lu') {
+    html += `<div class="info-box" style="margin-top:12px"><strong>LU exacto:</strong> La solución se obtuvo en un solo paso mediante sustitución hacia adelante y atrás. Residuo: ${maxRes.toExponential(3)}</div>`;
+  }
+
+  // Chart
+  html += `<div class="chart-wrap"><canvas id="chartA"></canvas></div>`;
+
+  // Interpretation
+  const maxIdx = x.indexOf(Math.max(...x));
+  const minIdx = x.indexOf(Math.min(...x));
+  html += `
+    <div class="interpretation">
+      <h4>📊 Interpretación</h4>
+      <p><strong>${zones[maxIdx]}</strong> recibe mayor asignación (${x[maxIdx].toFixed(1)} L/día), indicando mayor demanda o menor restricción de rutas.<br>
+      <strong>${zones[minIdx]}</strong> recibe menor asignación (${x[minIdx].toFixed(1)} L/día) — puede ser la zona más afectada por bloqueos.<br>
+      El sistema ${dominant ? 'converge establemente' : 'presenta inestabilidad'} con ${iters.length} iteraciones y residuo ${maxRes.toExponential(2)}.<br>
+      ${method === 'sor' ? `Con ω=${omega}: SOR aceleró la convergencia respecto a Gauss-Seidel estándar.` : ''}
+      ${method === 'lu' ? 'La factorización LU ofrece solución exacta, ideal para múltiples escenarios con la misma red.' : ''}</p>
+    </div>`;
+
+  html += '</div></div>';
+  showResult('results', html);
+
+  setTimeout(() => {
+    getOrCreateChart('chartA', {
+      type: 'bar',
+      data: {
+        labels: zones,
+        datasets: [{
+          label: 'Litros/día asignados',
+          data: x.map(v => parseFloat(v.toFixed(2))),
+          backgroundColor: ['rgba(0,229,255,0.7)','rgba(0,255,157,0.7)','rgba(255,107,53,0.7)','rgba(124,58,237,0.7)','rgba(255,214,10,0.7)'],
+          borderColor: ['#00e5ff','#00ff9d','#ff6b35','#7c3aed','#ffd60a'],
+          borderWidth: 2
+        }]
+      },
+      options: { ...defaultChartOptions('Distribución de Combustible por Zona'), plugins: { ...defaultChartOptions().plugins, legend: { display: false } } }
+    });
+  }, 100);
+}
+
+// Init
+buildMatrixUI();
+loadDefault();
+</script>
+</body>
+</html>

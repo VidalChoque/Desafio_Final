@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escenario B — Reservas · Métodos Numéricos</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">MN<span>/</span>BOL</a>
+  <ul class="nav-links" id="nav-links"></ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="scenario-tag">⬡ Escenario B</div>
+    <h1>Vaciado Crítico de<br>Reservas de Carburantes</h1>
+    <p>Simulación de la dinámica de reservas en una planta de carburante cuando la demanda aumenta y el reabastecimiento es limitado. Se comparan los métodos Euler, Heun y Runge-Kutta de 4to orden.</p>
+  </div>
+
+  <!-- CONTEXT -->
+  <div class="section">
+    <div class="section-header"><h2>Contexto del Problema</h2><span class="badge">MODELO</span></div>
+    <div class="section-body">
+      <div class="info-box">
+        <strong>Situación Bolivia:</strong> Las estaciones de servicio reportan colas de horas y reservas al límite. El modelo matemático permite predecir en cuántos días una planta llega a nivel crítico, y qué ocurre si aumenta el consumo por pánico o si se reducen los envíos.
+      </div>
+      <div class="formula">
+        R'(t) = entrada(t) − consumo(t)<br><br>
+        Modelo ampliado:<br>
+        R'(t) = Q_in − D₀·(1 + α·t)  —  crecimiento lineal de demanda<br>
+        R'(t) = Q_in − D₀·e^(βt)     —  crecimiento exponencial (pánico)<br><br>
+        R(0) = R₀  (reserva inicial en litros)
+      </div>
+    </div>
+  </div>
+
+  <!-- PARAMETERS -->
+  <div class="section">
+    <div class="section-header"><h2>Parámetros de la Simulación</h2><span class="badge">FORMULARIO</span></div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Reserva inicial R₀ (litros)</label>
+          <input type="number" id="R0" value="50000" step="1000">
+        </div>
+        <div class="form-group">
+          <label>Entrada diaria Q_in (L/día)</label>
+          <input type="number" id="Qin" value="8000" step="500">
+        </div>
+        <div class="form-group">
+          <label>Consumo base D₀ (L/día)</label>
+          <input type="number" id="D0" value="12000" step="500">
+        </div>
+        <div class="form-group">
+          <label>Modelo de consumo</label>
+          <select id="consumoModel">
+            <option value="lineal">Crecimiento lineal (α)</option>
+            <option value="exponencial">Crecimiento exponencial (β)</option>
+            <option value="constante">Consumo constante</option>
+            <option value="panico">Pánico: salto brusco día 3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Parámetro α o β</label>
+          <input type="number" id="alpha" value="0.05" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Nivel crítico (litros)</label>
+          <input type="number" id="Rcrit" value="5000" step="500">
+        </div>
+        <div class="form-group">
+          <label>Días de simulación</label>
+          <input type="number" id="tMax" value="30" step="1" min="1" max="120">
+        </div>
+        <div class="form-group">
+          <label>Paso h (días)</label>
+          <input type="number" id="hStep" value="0.5" step="0.1" min="0.01">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="simulate()">▶ Simular</button>
+        <button class="btn btn-secondary" onclick="loadScenario('bloqueo')">⛔ Escenario Bloqueo</button>
+        <button class="btn btn-secondary" onclick="loadScenario('panico')">😱 Escenario Pánico</button>
+        <button class="btn btn-secondary" onclick="loadScenario('normal')">✓ Escenario Normal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results"></div>
+
+  <!-- QUESTIONS -->
+  <div class="section">
+    <div class="section-header"><h2>Preguntas que Responde el Modelado</h2><span class="badge">RESPUESTAS</span></div>
+    <div class="section-body">
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>1. En cuantos dias se llega al nivel critico?</h4>
+          <p class="sub">La simulacion detecta el primer dia en que R(t) cae por debajo de la reserva critica. Ese tiempo es el margen operativo disponible antes del desabastecimiento.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>2. Como afecta el consumo por panico?</h4>
+          <p class="sub">El modelo de panico aumenta la demanda y acelera el vaciado. La curva de reservas cae con mayor pendiente y el dia critico aparece antes que en el escenario normal.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>3. Que pasa si bajan los envios?</h4>
+          <p class="sub">Reducir Q_in hace negativa la diferencia entrada-consumo. La reserva deja de compensar la demanda diaria y la planta entra en riesgo aun con consumo moderado.</p>
+        </div>
+        <div class="comparison-card">
+          <h4>4. Que metodo numerico es mas confiable?</h4>
+          <p class="sub">RK4 es la referencia mas precisa, Heun ofrece buen equilibrio y Euler sirve como aproximacion inicial. Con pasos pequenos los tres se acercan, pero RK4 resiste mejor cambios bruscos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY -->
+  <div class="section">
+    <div class="section-header"><h2>Algoritmos y Comparación de Métodos</h2><span class="badge">TEORÍA</span></div>
+    <div class="section-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tb-euler">Euler</button>
+        <button class="tab-btn" data-tab="tb-heun">Heun</button>
+        <button class="tab-btn" data-tab="tb-rk4">RK4</button>
+        <button class="tab-btn" data-tab="tb-comp">Comparación</button>
+      </div>
+      <div id="tb-euler" class="tab-panel active">
+        <div class="formula">R_{k+1} = R_k + h·f(t_k, R_k)</div>
+        <p>El método de Euler avanza usando la pendiente en el punto actual. Es el más simple pero acumula error O(h²) por paso. Para reservas de combustible con variaciones bruscas, puede subestimar o sobrestimar la caída.</p>
+      </div>
+      <div id="tb-heun" class="tab-panel">
+        <div class="formula">
+          k₁ = f(tₖ, Rₖ)<br>
+          k₂ = f(tₖ+h, Rₖ+h·k₁)<br>
+          R_{k+1} = Rₖ + h·(k₁+k₂)/2
+        </div>
+        <p>Heun (Euler mejorado) usa el promedio de dos pendientes: inicio y fin del intervalo. Error O(h³) por paso. Más estable que Euler para modelar el agotamiento progresivo.</p>
+      </div>
+      <div id="tb-rk4" class="tab-panel">
+        <div class="formula">
+          k₁=f(t,R), k₂=f(t+h/2, R+h·k₁/2)<br>
+          k₃=f(t+h/2, R+h·k₂/2), k₄=f(t+h, R+h·k₃)<br>
+          R_{k+1} = R + h·(k₁+2k₂+2k₃+k₄)/6
+        </div>
+        <p>RK4 es el estándar de referencia. Error O(h⁵) por paso. Altamente preciso para modelar la dinámica de reservas. Es el método recomendado para tomar decisiones de abastecimiento.</p>
+      </div>
+      <div id="tb-comp" class="tab-panel">
+        <p>La precisión relativa entre métodos depende del tamaño de paso h:</p>
+        <ul style="color:var(--text-dim);font-size:13px;padding-left:20px;line-height:2">
+          <li>h grande → Euler diverge primero, RK4 mantiene estabilidad más tiempo</li>
+          <li>h pequeño → los tres convergen, diferencias menores al 0.01%</li>
+          <li>Para sistemas de reservas: RK4 con h=0.5 días es suficientemente preciso</li>
+          <li>Heun es un buen balance entre costo computacional y precisión</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Desafío Final de <strong>Métodos Numéricos</strong> · Escenario B · Ecuaciones Diferenciales Ordinarias</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../js/shared.js"></script>
+<script>
+buildNav('b');
+initTabs();
+
+function loadScenario(s) {
+  if (s === 'bloqueo') {
+    document.getElementById('R0').value = 50000;
+    document.getElementById('Qin').value = 3000; // blocked supply
+    document.getElementById('D0').value = 12000;
+    document.getElementById('consumoModel').value = 'lineal';
+    document.getElementById('alpha').value = 0.03;
+    document.getElementById('Rcrit').value = 5000;
+    document.getElementById('tMax').value = 20;
+  } else if (s === 'panico') {
+    document.getElementById('R0').value = 50000;
+    document.getElementById('Qin').value = 8000;
+    document.getElementById('D0').value = 10000;
+    document.getElementById('consumoModel').value = 'panico';
+    document.getElementById('alpha').value = 0.1;
+    document.getElementById('Rcrit').value = 5000;
+    document.getElementById('tMax').value = 15;
+  } else {
+    document.getElementById('R0').value = 50000;
+    document.getElementById('Qin').value = 12000;
+    document.getElementById('D0').value = 12000;
+    document.getElementById('consumoModel').value = 'constante';
+    document.getElementById('alpha').value = 0;
+    document.getElementById('Rcrit').value = 5000;
+    document.getElementById('tMax').value = 30;
+  }
+  simulate();
+}
+
+function getF() {
+  const Qin = parseFloat(document.getElementById('Qin').value);
+  const D0  = parseFloat(document.getElementById('D0').value);
+  const alpha = parseFloat(document.getElementById('alpha').value);
+  const model = document.getElementById('consumoModel').value;
+
+  return (t, R) => {
+    if (R <= 0) return 0;
+    let consumo;
+    switch(model) {
+      case 'lineal': consumo = D0 * (1 + alpha * t); break;
+      case 'exponencial': consumo = D0 * Math.exp(alpha * t); break;
+      case 'panico': consumo = t >= 3 ? D0 * (1 + 2.5 * alpha * t) : D0; break;
+      default: consumo = D0;
+    }
+    return Qin - consumo;
+  };
+}
+
+function eulerSolve(f, R0, h, tMax) {
+  const pts = [{ t: 0, R: R0 }];
+  let t = 0, R = R0;
+  while (t < tMax - 1e-9) {
+    R = Math.max(0, R + h * f(t, R));
+    t += h;
+    pts.push({ t: parseFloat(t.toFixed(4)), R: parseFloat(R.toFixed(2)) });
+  }
+  return pts;
+}
+
+function heunSolve(f, R0, h, tMax) {
+  const pts = [{ t: 0, R: R0 }];
+  let t = 0, R = R0;
+  while (t < tMax - 1e-9) {
+    const k1 = f(t, R);
+    const k2 = f(t + h, Math.max(0, R + h * k1));
+    R = Math.max(0, R + h * (k1 + k2) / 2);
+    t += h;
+    pts.push({ t: parseFloat(t.toFixed(4)), R: parseFloat(R.toFixed(2)) });
+  }
+  return pts;
+}
+
+function rk4Solve(f, R0, h, tMax) {
+  const pts = [{ t: 0, R: R0 }];
+  let t = 0, R = R0;
+  while (t < tMax - 1e-9) {
+    const k1 = f(t, R);
+    const k2 = f(t + h/2, Math.max(0, R + h*k1/2));
+    const k3 = f(t + h/2, Math.max(0, R + h*k2/2));
+    const k4 = f(t + h, Math.max(0, R + h*k3));
+    R = Math.max(0, R + h*(k1 + 2*k2 + 2*k3 + k4)/6);
+    t += h;
+    pts.push({ t: parseFloat(t.toFixed(4)), R: parseFloat(R.toFixed(2)) });
+  }
+  return pts;
+}
+
+function criticalDay(pts, Rcrit) {
+  for (const p of pts) if (p.R <= Rcrit) return p.t;
+  return null;
+}
+
+function simulate() {
+  const R0 = parseFloat(document.getElementById('R0').value);
+  const Rcrit = parseFloat(document.getElementById('Rcrit').value);
+  const tMax = parseFloat(document.getElementById('tMax').value);
+  const h = parseFloat(document.getElementById('hStep').value);
+  const f = getF();
+
+  const euler = eulerSolve(f, R0, h, tMax);
+  const heun  = heunSolve(f, R0, h, tMax);
+  const rk4   = rk4Solve(f, R0, h, tMax);
+
+  const dcE = criticalDay(euler, Rcrit);
+  const dcH = criticalDay(heun, Rcrit);
+  const dcR = criticalDay(rk4, Rcrit);
+
+  // Last values
+  const finalE = euler[euler.length-1].R;
+  const finalH = heun[heun.length-1].R;
+  const finalR = rk4[rk4.length-1].R;
+
+  // Diff Euler vs RK4
+  const diffEvsRK = rk4.map((p,i) => Math.abs(p.R - (euler[i]?.R||0)));
+  const maxDiff = Math.max(...diffEvsRK);
+
+  let html = `
+    <div class="section">
+      <div class="section-header"><h2>Resultados de la Simulación</h2><span class="badge">h = ${h} días</span></div>
+      <div class="section-body">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-value" style="color:var(--red)">${dcR !== null ? dcR.toFixed(1)+' días' : 'No crítico'}</div>
+            <div class="result-label">Día crítico (RK4)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--yellow)">${dcH !== null ? dcH.toFixed(1)+' días' : 'No crítico'}</div>
+            <div class="result-label">Día crítico (Heun)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--accent)">${dcE !== null ? dcE.toFixed(1)+' días' : 'No crítico'}</div>
+            <div class="result-label">Día crítico (Euler)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="color:var(--green)">${maxDiff.toFixed(0)} L</div>
+            <div class="result-label">Dif. Euler vs RK4</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap" style="height:350px"><canvas id="chartB_main"></canvas></div>
+
+        <div class="chart-wrap" style="height:220px;margin-top:16px"><canvas id="chartB_err"></canvas></div>`;
+
+  // Table: sample every step ÷ 5
+  const step5 = Math.max(1, Math.floor(rk4.length / 20));
+  const tableRows = rk4.filter((_, i) => i % step5 === 0 || i === rk4.length-1).map((p, i) => {
+    const eR = euler.find(e => Math.abs(e.t - p.t) < h/2)?.R ?? 0;
+    const hR = heun.find(e => Math.abs(e.t - p.t) < h/2)?.R ?? 0;
+    return [
+      p.t.toFixed(1),
+      eR.toFixed(1),
+      hR.toFixed(1),
+      p.R.toFixed(1),
+      Math.abs(p.R - eR).toFixed(1)
+    ];
+  });
+  html += buildTable(['Tiempo (días)', 'Euler (L)', 'Heun (L)', 'RK4 (L)', '|RK4-Euler|'], tableRows);
+
+  const modelLabels = { lineal:'lineal', exponencial:'exponencial', constante:'constante', panico:'pánico' };
+  html += `
+    <div class="interpretation">
+      <h4>📊 Interpretación</h4>
+      <p>
+        Con el modelo de consumo <strong>${modelLabels[document.getElementById('consumoModel').value]}</strong>,
+        la planta ${dcR !== null ? `alcanza el nivel crítico de <strong>${Rcrit.toLocaleString()} L</strong> en <strong>${dcR.toFixed(1)} días</strong>` : 'no llega al nivel crítico en el período simulado'}.
+        ${dcR !== null && dcR < 7 ? '<br><strong style="color:var(--red)">⚠ ALERTA: Menos de una semana para el colapso del suministro.</strong>' : ''}
+        <br>La diferencia máxima entre Euler y RK4 es <strong>${maxDiff.toFixed(0)} L</strong>.
+        ${maxDiff > R0 * 0.05 ? ' Euler introduce error significativo; se recomienda RK4 para decisiones de abastecimiento.' : ' Los tres métodos son comparables para este paso h.'}
+        <br>RK4 es el más preciso: usa 4 evaluaciones de la función por paso con error de orden O(h⁵).
+      </p>
+    </div>`;
+  html += '</div></div>';
+
+  showResult('results', html);
+
+  const labels = rk4.map(p => p.t.toFixed(1));
+
+  setTimeout(() => {
+    getOrCreateChart('chartB_main', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Euler', data: euler.map(p=>p.R), borderColor:'#00e5ff', backgroundColor:'transparent', borderWidth:2, pointRadius:0 },
+          { label: 'Heun', data: heun.map(p=>p.R), borderColor:'#00ff9d', backgroundColor:'transparent', borderWidth:2, pointRadius:0, borderDash:[6,3] },
+          { label: 'RK4', data: rk4.map(p=>p.R), borderColor:'#ff6b35', backgroundColor:'rgba(255,107,53,0.05)', borderWidth:3, pointRadius:0, fill:true },
+          { label: `Nivel crítico (${Rcrit.toLocaleString()} L)`, data: rk4.map(()=>Rcrit), borderColor:'#ff4757', backgroundColor:'transparent', borderWidth:1, pointRadius:0, borderDash:[4,4] }
+        ]
+      },
+      options: { ...defaultChartOptions('Evolución de Reservas de Carburante'), scales: { x: { ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(42,58,92,0.5)'}, title:{display:true,text:'Días',color:'#8892b0'} }, y: { ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(42,58,92,0.5)'}, title:{display:true,text:'Litros',color:'#8892b0'} } }, plugins: { legend: { labels:{color:'#8892b0',font:{family:'Space Mono',size:10}} }, title:{display:true,text:'Evolución de Reservas de Carburante',color:'#e8eaf6',font:{family:'Syne',size:14,weight:'700'}} } }
+    });
+
+    getOrCreateChart('chartB_err', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: '|RK4 − Euler|', data: diffEvsRK.map(v=>v.toFixed(2)), borderColor:'#ffd60a', backgroundColor:'rgba(255,214,10,0.1)', fill:true, borderWidth:2, pointRadius:0 }
+        ]
+      },
+      options: { ...defaultChartOptions('Error acumulado: RK4 vs Euler'), scales: { x: { ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(42,58,92,0.5)'} }, y: { ticks:{color:'#8892b0',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(42,58,92,0.5)'} } }, plugins: { legend:{labels:{color:'#8892b0',font:{family:'Space Mono',size:10}}}, title:{display:true,text:'Diferencia acumulada entre Euler y RK4 (litros)',color:'#e8eaf6',font:{family:'Syne',size:13,weight:'700'}} } }
+    });
+  }, 100);
+}
+
+simulate();
+</script>
+</body>
+</html>
